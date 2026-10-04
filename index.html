@@ -1,16 +1,58 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Auto Order</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lilacmart Auto Order</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<header class="topbar">
+  <div class="brand">💜 Lilacmart</div>
+  <a class="admin-link" href="admin.html">Panel Admin</a>
+</header>
+
 <main class="container">
-  <h1>Auto Order</h1>
-  <p>Website pemesanan otomatis.</p>
-  <a class="btn" href="admin.html">Panel Admin</a>
+  <section class="hero">
+    <div>
+      <span class="badge">AUTO ORDER</span>
+      <h1>Belanja digital jadi lebih mudah.</h1>
+      <p>Pilih produk, masukkan data pesanan, lalu checkout melalui WhatsApp.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Produk</h2>
+      <span id="productCount"></span>
+    </div>
+    <div id="products" class="grid"></div>
+  </section>
+
+  <section class="cart-card">
+    <div class="section-head">
+      <h2>Keranjang</h2>
+      <button class="btn ghost" onclick="clearCart()">Kosongkan</button>
+    </div>
+    <div id="cart"></div>
+    <div class="checkout">
+      <label>Nama
+        <input id="customerName" placeholder="Nama kamu">
+      </label>
+      <label>No. WhatsApp
+        <input id="customerPhone" placeholder="08xxxxxxxxxx">
+      </label>
+      <label>Catatan
+        <textarea id="customerNote" placeholder="Catatan pesanan (opsional)"></textarea>
+      </label>
+      <div class="total"><span>Total</span><strong id="total">Rp0</strong></div>
+      <button class="btn primary full" onclick="checkoutWhatsApp()">Checkout via WhatsApp</button>
+      <p class="hint">Ganti nomor WhatsApp toko di <code>app.js</code>.</p>
+    </div>
+  </section>
 </main>
+
+<footer>© 2026 Lilacmart Auto Order</footer>
+<script src="app.js"></script>
 </body>
 </html>
