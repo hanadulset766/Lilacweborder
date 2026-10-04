@@ -70,10 +70,23 @@ function confirmPaid(){
   lastOrder.paymentStatus = "Menunggu verifikasi";
   lastOrder.paidAt = new Date().toISOString();
 
-  localStorage.setItem("lilac_last_order", JSON.stringify(lastOrder));
+  localStorage.setItem(
+    "lilac_last_order",
+    JSON.stringify(lastOrder)
+  );
 
-  showToast("Pesanan tersimpan. WhatsApp akan dibuka...");
+  showToast("Pesanan tersimpan. Membuka WhatsApp...");
+
+  // Tutup QRIS
+  const qrModal = document.getElementById("qrisModal");
+  if(qrModal){
+    qrModal.classList.remove("show");
+  }
+
+  // BUKA WHATSAPP LANGSUNG
+  sendWhatsApp();
 }
+
 
 function sendWhatsApp(){
   if(!lastOrder){
@@ -106,8 +119,57 @@ Mohon diproses pesanannya. Terima kasih 🙏`;
   const url =
     `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
 
-  window.open(url, "_blank");
+  // Jangan pakai setTimeout/window.open.
+  // location.href lebih aman di Chrome Android.
+  window.location.href = url;
 }
-function showToast(t){const e=document.getElementById("toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2800)}
-function scrollToTop(){scrollTo({top:0,behavior:"smooth"})}
-document.addEventListener("DOMContentLoaded",()=>{renderProducts();updateCounts()});
+
+
+// Alias untuk tombol versi bahasa Indonesia
+function konfirmasiDibayar(){
+  confirmPaid();
+}
+
+function kirimWhatsApp(){
+  sendWhatsApp();
+}
+
+
+function closeQRIS(){
+  const qrModal = document.getElementById("qrisModal");
+
+  if(qrModal){
+    qrModal.classList.remove("show");
+  }
+}
+
+
+function showToast(text){
+  const toast = document.getElementById("toast");
+
+  if(!toast){
+    alert(text);
+    return;
+  }
+
+  toast.textContent = text;
+  toast.classList.add("show");
+
+  setTimeout(function(){
+    toast.classList.remove("show");
+  }, 2500);
+}
+
+
+function scrollToTop(){
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+
+document.addEventListener("DOMContentLoaded", function(){
+  renderProducts();
+  updateCounts();
+});
