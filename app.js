@@ -48,7 +48,12 @@ function parseCSV(text){
 
 function loadProducts(){
 
-  window.lilacSheetCallback = function(data){
+  window.google = window.google || {};
+  window.google.visualization = window.google.visualization || {};
+  window.google.visualization.Query =
+    window.google.visualization.Query || {};
+
+  window.google.visualization.Query.setResponse = function(data){
 
     try{
 
@@ -129,6 +134,7 @@ function loadProducts(){
     }
 
   };
+
   const oldScript =
     document.getElementById("lilac-sheet-script");
 
@@ -141,9 +147,8 @@ function loadProducts(){
   script.id = "lilac-sheet-script";
 
   script.src =
-    "https://docs.google.com/spreadsheets/d/1OGqnNp5BYmE252a59vPxz9ooyCukkfqfa3lqz49jrNc/gviz/tq?sheet=Katalog&headers=1&tqx=" +
-    encodeURIComponent("out:json;responseHandler:lilacSheetCallback") +
-    "&_=" + Date.now();
+    "https://docs.google.com/spreadsheets/d/1OGqnNp5BYmE252a59vPxz9ooyCukkfqfa3lqz49jrNc/gviz/tq?sheet=Katalog&headers=1&tqx=out:json&_=" +
+    Date.now();
 
   script.onerror = function(){
 
