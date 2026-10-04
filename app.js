@@ -4,7 +4,6 @@ const CONFIG={
   qrisImage:"qris.jpg" // GANTI dengan file QRIS asli, mis. qris.png
 };
 
-const products=[
 let products = [];
 
 const SHEET_CSV_URL =
