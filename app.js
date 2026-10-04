@@ -74,9 +74,8 @@ function confirmPaid(){
 
   showToast("Pesanan tersimpan. WhatsApp akan dibuka...");
 
-  setTimeout(function(){
-    sendWhatsApp();
-  }, 700);
+  showToast("Pesanan tersimpan. Membuka WhatsApp...");
+sendWhatsApp();
 }
 
 function sendWhatsApp(){
