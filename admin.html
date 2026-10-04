@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel Admin - Auto Order</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="loginView" class="container narrow">
+  <div class="card">
+    <h1>Login Admin</h1>
+    <p class="muted">Masuk menggunakan akun admin Firebase.</p>
+    <form id="loginForm">
+      <label>Email</label>
+      <input id="email" type="email" autocomplete="username" required placeholder="admin@email.com">
+      <label>Password</label>
+      <input id="password" type="password" autocomplete="current-password" required placeholder="Password">
+      <button class="btn full" type="submit">Login</button>
+      <p id="loginMsg" class="error"></p>
+    </form>
+  </div>
+</div>
+
+<div id="appView" hidden>
+  <header class="topbar">
+    <strong>Auto Order — Admin</strong>
+    <button id="logoutBtn" class="btn danger">Logout</button>
+  </header>
+  <main class="container">
+    <div class="grid">
+      <section class="card">
+        <h2>Dashboard</h2>
+        <div class="stats">
+          <div><span>Total Produk</span><b id="productCount">0</b></div>
+          <div><span>Total Pesanan</span><b id="orderCount">0</b></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Tambah Produk</h2>
+        <form id="productForm">
+          <label>Nama produk</label>
+          <input id="productName" required>
+          <label>Harga</label>
+          <input id="productPrice" type="number" min="0" required>
+          <button class="btn" type="submit">Simpan Produk</button>
+          <p id="productMsg" class="muted"></p>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Daftar Produk</h2>
+        <div id="products">Memuat...</div>
+      </section>
+
+      <section class="card">
+        <h2>Pesanan</h2>
+        <div id="orders">Memuat...</div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
+  from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy }
+  from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const loginView = document.querySelector("#loginView");
+const appView = document.querySelector("#appView");
+const loginMsg = document.querySelector("#loginMsg");
+
+document.querySelector("#loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  loginMsg.textContent = "";
+  try {
+    await signInWithEmailAndPassword(
+      auth,
+      document.querySelector("#email").value.trim(),
+      document.querySelector("#password").value
+    );
+  } catch (err) {
+    loginMsg.textContent = "Login gagal. Periksa email dan password.";
+  }
+});
+
+document.querySelector("#logoutBtn").addEventListener("click", () => signOut(auth));
+
+document.querySelector("#productForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = document.querySelector("#productName").value.trim();
+  const price = Number(document.querySelector("#productPrice").value);
+  if (!name || !Number.isFinite(price)) return;
+  try {
+    await addDoc(collection(db, "products"), {
+      name, price, createdAt: Date.now()
+    });
+    e.target.reset();
+    document.querySelector("#productMsg").textContent = "Produk tersimpan.";
+    await loadData();
+  } catch {
+    document.querySelector("#productMsg").textContent = "Gagal menyimpan. Periksa aturan Firestore.";
+  }
+});
+
+async function loadData() {
+  const productSnap = await getDocs(collection(db, "products"));
+  document.querySelector("#productCount").textContent = productSnap.size;
+  document.querySelector("#products").innerHTML = productSnap.empty
+    ? '<p class="muted">Belum ada produk.</p>'
+    : productSnap.docs.map(d => {
+        const p=d.data();
+        return `<div class="row"><span>${escapeHtml(p.name)}<br><small>Rp ${Number(p.price||0).toLocaleString("id-ID")}</small></span>
+        <button class="btn danger small" data-delete="${d.id}">Hapus</button></div>`;
+      }).join("");
+
+  document.querySelectorAll("[data-delete]").forEach(btn => btn.onclick = async () => {
+    if (confirm("Hapus produk ini?")) {
+      await deleteDoc(doc(db, "products", btn.dataset.delete));
+      loadData();
+    }
+  });
+
+  const orderSnap = await getDocs(query(collection(db, "orders"), orderBy("createdAt", "desc")));
+  document.querySelector("#orderCount").textContent = orderSnap.size;
+  document.querySelector("#orders").innerHTML = orderSnap.empty
+    ? '<p class="muted">Belum ada pesanan.</p>'
+    : orderSnap.docs.map(d => {
+        const o=d.data();
+        return `<div class="order"><b>${escapeHtml(o.productName || "Pesanan")}</b>
+        <br>Nama: ${escapeHtml(o.customerName || "-")}
+        <br>Status: ${escapeHtml(o.status || "baru")}</div>`;
+      }).join("");
+}
+
+function escapeHtml(v) {
+  return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    loginView.hidden = true;
+    appView.hidden = false;
+    await loadData();
+  } else {
+    loginView.hidden = false;
+    appView.hidden = true;
+  }
+});
+</script>
+</body>
+</html>
