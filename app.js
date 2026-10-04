@@ -129,7 +129,42 @@ function loadProducts(){
     }
 
   };
+  const oldScript =
+    document.getElementById("lilac-sheet-script");
 
+  if(oldScript){
+    oldScript.remove();
+  }
+
+  const script = document.createElement("script");
+
+  script.id = "lilac-sheet-script";
+
+  script.src =
+    "https://docs.google.com/spreadsheets/d/1OGqnNp5BYmE252a59vPxz9ooyCukkfqfa3lqz49jrNc/gviz/tq?sheet=Katalog&headers=1&tqx=" +
+    encodeURIComponent("out:json;responseHandler:lilacSheetCallback") +
+    "&_=" + Date.now();
+
+  script.onerror = function(){
+
+    console.error("Google Sheets gagal dimuat");
+
+    const box = document.getElementById("products");
+
+    if(box){
+      box.innerHTML = `
+        <div style="padding:20px;text-align:center">
+          <h3>⚠️ Katalog belum dapat dimuat</h3>
+          <p>Google Sheets tidak dapat diakses.</p>
+        </div>
+      `;
+    }
+
+  };
+
+  document.head.appendChild(script);
+
+}
   const oldScript =
     document.getElementById("lilac-sheet-script");
 
