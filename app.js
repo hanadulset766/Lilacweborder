@@ -56,36 +56,40 @@ function loadProducts(){
         throw new Error("Data Google Sheets tidak ditemukan");
       }
 
+      const cols = data.table.cols || [];
       const rows = data.table.rows || [];
 
       products = rows.map(function(row){
 
-        const c = row.c || [];
-
-        function val(i){
-          return c[i] && c[i].v !== undefined && c[i].v !== null
-            ? String(c[i].v).trim()
+        const values = (row.c || []).map(function(cell){
+          return cell && cell.v !== undefined && cell.v !== null
+            ? String(cell.v)
             : "";
-        }
+        });
+
+        const dataRow = {};
+
+        cols.forEach(function(col,index){
+          dataRow[col.label] = values[index] || "";
+        });
 
         return {
-          id: Number(val(0)) || 0,
-          name: val(1),
-          cat: val(2) || "Lainnya",
+          id: Number(dataRow["ID"]) || 0,
+          name: dataRow["Nama Produk"] || "Produk",
+          cat: dataRow["Kategori"] || "Lainnya",
           price: Number(
-            val(3).replace(/[^\d]/g,"")
+            String(dataRow["Harga"] || "0")
+              .replace(/[^\d]/g,"")
           ) || 0,
-          icon: val(4) || "🛍️",
-          image: val(5),
-          description: val(6),
-          status: val(7) || "Ready"
+          icon: dataRow["Icon"] || "🛍️",
+          image: dataRow["URL Gambar"] || "",
+          description: dataRow["Deskripsi"] || "",
+          status: dataRow["Status"] || "Ready"
         };
 
       }).filter(function(p){
         return p.id && p.name;
       });
-
-      console.log("KATALOG BERHASIL:", products);
 
       renderProducts();
 
@@ -96,7 +100,7 @@ function loadProducts(){
       const readyEl = document.getElementById("readyCount");
 
       if(readyEl){
-        readyEl.textContent = `(${ready} produk ready)`;
+        readyEl.textContent = "(" + ready + " produk ready)";
       }
 
       const activeEl = document.getElementById("activeCount");
@@ -105,9 +109,11 @@ function loadProducts(){
         activeEl.textContent = products.length;
       }
 
+      console.log("Katalog berhasil dimuat:", products);
+
     }catch(error){
 
-      console.error("Gagal membaca katalog:", error);
+      console.error("Gagal memproses katalog:", error);
 
       const box = document.getElementById("products");
 
@@ -115,7 +121,7 @@ function loadProducts(){
         box.innerHTML = `
           <div style="padding:20px;text-align:center">
             <h3>⚠️ Katalog belum dapat dimuat</h3>
-            <p>Data Google Sheets tidak dapat diproses.</p>
+            <p>Data Google Sheets bermasalah.</p>
           </div>
         `;
       }
@@ -136,7 +142,9 @@ function loadProducts(){
   script.id = "lilac-sheet-script";
 
   script.src =
-    "https://docs.google.com/spreadsheets/d/1OGqnNp5BYmE252a59vPxz9ooyCukkfqfa3lqz49jrNc/gviz/tq?gid=0&headers=1&tqx=out:json;responseHandler:lilacSheetCallback";
+    "https://docs.google.com/spreadsheets/d/1OGqnNp5BYmE252a59vPxz9ooyCukkfqfa3lqz49jrNc/gviz/tq?sheet=Katalog&headers=1&tqx=" +
+    encodeURIComponent("out:json;responseHandler:lilacSheetCallback") +
+    "&_=" + Date.now();
 
   script.onerror = function(){
 
@@ -158,114 +166,6 @@ function loadProducts(){
   document.head.appendChild(script);
 
 }
-
-      const cols = data.table.cols || [];
-      const rows = data.table.rows || [];
-
-      products = rows.map(row => {
-
-        const values = (row.c || []).map(cell =>
-          cell && cell.v !== undefined && cell.v !== null
-            ? String(cell.v)
-            : ""
-        );
-
-        const dataRow = {};
-
-        cols.forEach((col,index) => {
-          dataRow[col.label] = values[index] || "";
-        });
-
-        return {
-          id: Number(dataRow["ID"]) || 0,
-          name: dataRow["Nama Produk"] || "Produk",
-          cat: dataRow["Kategori"] || "Lainnya",
-          price: Number(
-            String(dataRow["Harga"] || "0")
-              .replace(/[^\d]/g,"")
-          ) || 0,
-          icon: dataRow["Icon"] || "🛍️",
-          image: dataRow["URL Gambar"] || "",
-          description: dataRow["Deskripsi"] || "",
-          status: dataRow["Status"] || "Ready"
-        };
-
-      }).filter(p => p.id && p.name);
-
-      renderProducts();
-
-      const ready = products.filter(
-        p => p.status.toLowerCase() === "ready"
-      ).length;
-
-      const readyEl = document.getElementById("readyCount");
-
-      if(readyEl){
-        readyEl.textContent = `(${ready} produk ready)`;
-      }
-
-      const activeEl = document.getElementById("activeCount");
-
-      if(activeEl){
-        activeEl.textContent = products.length;
-      }
-
-      console.log("Katalog berhasil dimuat:", products);
-
-    }catch(error){
-
-      console.error("Gagal memproses katalog:",error);
-
-      const box = document.getElementById("products");
-
-      if(box){
-        box.innerHTML = `
-          <div style="padding:20px;text-align:center">
-            <h3>⚠️ Katalog belum dapat dimuat</h3>
-            <p>Data Google Sheets bermasalah.</p>
-          </div>
-        `;
-      }
-
-    }
-
-  };
-
-  const oldScript = document.getElementById("lilac-sheet-script");
-
-  if(oldScript){
-    oldScript.remove();
-  }
-
-  const script = document.createElement("script");
-
-  script.id = "lilac-sheet-script";
-
-  script.src =
-    " script.src =
-"https://docs.google.com/spreadsheets/d/1OGqnNp5BYmE252a59vPxz9ooyCukkfqfa3lqz49jrNc/gviz/tq?sheet=Katalog&headers=1&tqx=out:json;responseHandler:lilacSheetCallback";
-
-  script.onerror = function(){
-
-    console.error("Google Sheets gagal dimuat");
-
-    const box = document.getElementById("products");
-
-    if(box){
-      box.innerHTML = `
-        <div style="padding:20px;text-align:center">
-          <h3>⚠️ Katalog belum dapat dimuat</h3>
-          <p>Google Sheets tidak dapat diakses.</p>
-        </div>
-      `;
-    }
-
-  };
-
-  document.head.appendChild(script);
-
-}
-  
 let category="Semua",cart=JSON.parse(localStorage.getItem("lilac_cart")||"[]"),lastOrder=null;
 
 function rupiah(n){return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n)}
