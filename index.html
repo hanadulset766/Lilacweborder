@@ -1,58 +1,102 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lilacmart Auto Order</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#d73f72">
+<title>Lilacmart Store — Auto Order QRIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">💜 Lilacmart</div>
-  <a class="admin-link" href="admin.html">Panel Admin</a>
+<header class="top">
+  <div class="brand">
+    <div class="avatar">🌸</div>
+    <div><b>Lilacmart <span>Store</span></b><small>✦ Official Marketplace</small></div>
+  </div>
+  <button class="cart-top" onclick="openCart()">🛍️ <span id="cartCount">0</span></button>
 </header>
 
-<main class="container">
-  <section class="hero">
-    <div>
-      <span class="badge">AUTO ORDER</span>
-      <h1>Belanja digital jadi lebih mudah.</h1>
-      <p>Pilih produk, masukkan data pesanan, lalu checkout melalui WhatsApp.</p>
+<section class="search-wrap">
+  <div class="search">⌕ <input id="search" placeholder="Cari aplikasi premium, streaming, AI, game..." oninput="renderProducts()"></div>
+</section>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-brand"><div class="avatar big">🌸</div><div><h1>Lilacmart <span>Store</span></h1><div class="official">✓ Official Marketplace</div></div></div>
+    <p class="bio">☷ ☷☷ Lilacmart 𓂃 💗 ︙ ───── 🎀 💎<br>
+      laman terpercaya dengan aplikasi premium berkualitas 🌷🌸 ︙ menyajikan pelayanan bintang lima 🌼 ︙ welcome to ethereal page! ♡</p>
+    <div class="stats">
+      <div><b id="activeCount">25</b><small>PRODUK AKTIF</small></div>
+      <div><b>100%</b><small>GARANSI LAYANAN</small></div>
+      <div><b>Fast</b><small>RESPONSE CS</small></div>
+    </div>
+  </div>
+</section>
+
+<div class="ticker"><span>Disney+ Hotstar</span> ✦ <span>Spotify Premium</span> ✦ <span>Canva Pro</span> ✦ <span>ChatGPT Plus</span> ✦</div>
+
+<main>
+  <section class="section">
+    <div class="title-row"><h2>▰ Kategori Produk</h2><span id="readyCount">(25 produk ready)</span></div>
+    <div class="chips">
+      <button class="chip active" onclick="setCategory('Semua',this)">✦ Semua</button>
+      <button class="chip" onclick="setCategory('Langganan',this)">🌸 Langganan</button>
+      <button class="chip" onclick="setCategory('Streaming',this)">🌸 Streaming</button>
+      <button class="chip" onclick="setCategory('AI',this)">🌸 AI</button>
+      <button class="chip" onclick="setCategory('Game',this)">🌸 Game</button>
     </div>
   </section>
 
-  <section>
-    <div class="section-head">
-      <h2>Produk</h2>
-      <span id="productCount"></span>
-    </div>
-    <div id="products" class="grid"></div>
-  </section>
-
-  <section class="cart-card">
-    <div class="section-head">
-      <h2>Keranjang</h2>
-      <button class="btn ghost" onclick="clearCart()">Kosongkan</button>
-    </div>
-    <div id="cart"></div>
-    <div class="checkout">
-      <label>Nama
-        <input id="customerName" placeholder="Nama kamu">
-      </label>
-      <label>No. WhatsApp
-        <input id="customerPhone" placeholder="08xxxxxxxxxx">
-      </label>
-      <label>Catatan
-        <textarea id="customerNote" placeholder="Catatan pesanan (opsional)"></textarea>
-      </label>
-      <div class="total"><span>Total</span><strong id="total">Rp0</strong></div>
-      <button class="btn primary full" onclick="checkoutWhatsApp()">Checkout via WhatsApp</button>
-      <p class="hint">Ganti nomor WhatsApp toko di <code>app.js</code>.</p>
-    </div>
-  </section>
+  <section class="products" id="products"></section>
 </main>
 
-<footer>© 2026 Lilacmart Auto Order</footer>
+<nav class="bottom">
+  <button class="selected" onclick="scrollToTop()">▦<small>Katalog</small></button>
+  <button onclick="showToast('Fitur ulasan siap diaktifkan dari panel admin.')">★<small>Ulasan</small></button>
+  <button onclick="showHelp()">ⓘ<small>Bantuan</small></button>
+  <button onclick="openCart()">🛍️<em id="bottomCount">0</em><small>Keranjang</small></button>
+</nav>
+
+<div class="modal" id="cartModal">
+ <div class="sheet">
+  <button class="close" onclick="closeCart()">×</button>
+  <h2>🛍️ Keranjang</h2>
+  <div id="cartItems"></div>
+  <div class="total"><span>Total</span><b id="cartTotal">Rp0</b></div>
+  <button class="primary" onclick="openCheckout()">Lanjut Pembayaran QRIS</button>
+ </div>
+</div>
+
+<div class="modal" id="checkoutModal">
+ <div class="sheet">
+  <button class="close" onclick="closeCheckout()">×</button>
+  <h2>💗 Checkout</h2>
+  <label>Nama<input id="customerName" placeholder="Nama kamu"></label>
+  <label>No. WhatsApp<input id="customerPhone" placeholder="08xxxxxxxxxx"></label>
+  <label>Catatan<textarea id="customerNote" placeholder="Catatan pesanan (opsional)"></textarea></label>
+  <div class="summary"><span>Total pembayaran</span><b id="checkoutTotal">Rp0</b></div>
+  <button class="primary" onclick="createOrder()">Bayar dengan QRIS</button>
+ </div>
+</div>
+
+<div class="modal" id="qrisModal">
+ <div class="sheet qris-sheet">
+  <button class="close" onclick="closeQRIS()">×</button>
+  <div class="qris-head"><span>✓</span><div><h2>Bayar dengan QRIS</h2><p>Scan menggunakan m-banking / e-wallet yang mendukung QRIS.</p></div></div>
+  <div class="invoice" id="invoiceNo"></div>
+  <div class="qris-box"><img src="qris-placeholder.svg" alt="QRIS toko" id="qrisImage"></div>
+  <div class="pay-total" id="qrisTotal">Rp0</div>
+  <ol class="steps"><li>Buka aplikasi pembayaran kamu.</li><li>Scan QRIS di atas.</li><li>Pastikan nominal pembayaran sesuai.</li><li>Setelah berhasil, tekan tombol konfirmasi.</li></ol>
+  <button class="primary" onclick="confirmPaid()">✓ Saya sudah bayar</button>
+  <button class="secondary" onclick="sendWhatsApp()">Kirim detail order ke WhatsApp</button>
+  <p class="warning">Status pembayaran otomatis membutuhkan gateway QRIS + webhook. Versi GitHub Pages ini tidak menyimpan secret API di browser.</p>
+ </div>
+</div>
+
+<div class="toast" id="toast"></div>
 <script src="app.js"></script>
 </body>
 </html>

@@ -1,30 +1,26 @@
-# Lilacmart Auto Order
+# Lilacmart Store — Auto Order QRIS
 
-Website toko digital statis yang siap dipakai di GitHub Pages.
+Paket ini mengubah tampilan Lilacweborder menjadi tema pink/cream seperti screenshot dan menambahkan alur:
+Katalog → Keranjang → Data pelanggan → QRIS → Konfirmasi → WhatsApp.
 
 ## File
-- `index.html` — halaman toko/pelanggan
-- `admin.html` — panel admin
-- `style.css` — tampilan responsif
-- `app.js` — produk, keranjang, checkout WhatsApp
-- `admin.js` — login demo dan CRUD produk
+- `index.html` — halaman toko
+- `style.css` — tema/tampilan responsif
+- `app.js` — produk, keranjang, checkout QRIS, WhatsApp
+- `qris-placeholder.svg` — WAJIB diganti dengan gambar QRIS merchant asli
 
-## Login demo
-- Username: `admin`
-- Password: `Admin123!`
+## Pasang di GitHub Pages
+1. Upload semua file ke root repository.
+2. Pastikan file utama bernama `index.html`.
+3. GitHub → Settings → Pages → Deploy from branch → `main` → `/ (root)`.
+4. Setelah aktif, buka URL Pages kamu.
 
-## Upload ke GitHub Pages
-1. Upload semua file di root repository.
-2. Pastikan nama halaman utama adalah `index.html`.
-3. GitHub → Settings → Pages.
-4. Source: Deploy from a branch.
-5. Branch: `main`, folder: `/ (root)`.
-6. Tunggu deployment selesai.
-7. Toko: `https://USERNAME.github.io/NAMA-REPO/`
-8. Admin: `https://USERNAME.github.io/NAMA-REPO/admin.html`
+## WAJIB ubah di app.js
+- `whatsapp`: nomor WhatsApp toko, format 628xxxx tanpa `+`.
+- `qrisImage`: nama file gambar QRIS asli, misalnya `qris.png`.
+- Daftar produk dapat diubah pada array `products`.
 
-## WhatsApp
-Buka `app.js`, cari `WHATSAPP_NUMBER`, lalu ganti dengan nomor toko dalam format internasional tanpa `+` dan tanpa spasi.
+## Tentang pembayaran QRIS
+Versi ini memakai QRIS merchant yang ditampilkan sebagai gambar. Pelanggan tetap melakukan scan dan kemudian mengirim konfirmasi order ke WhatsApp.
 
-## Catatan keamanan
-Login admin di versi ini adalah DEMO berbasis JavaScript/localStorage/sessionStorage. Jangan gunakan untuk menyimpan data sensitif atau mengelola uang secara nyata. Untuk produksi, gunakan backend, database, autentikasi server-side, HTTPS, dan endpoint pembayaran/webhook yang aman.
+Jika ingin **benar-benar otomatis** (status berubah menjadi PAID tanpa konfirmasi manual), GitHub Pages saja tidak cukup untuk menyimpan secret API dan menerima webhook. Gunakan payment gateway/backend yang menyediakan QRIS dinamis + status/inquiry/webhook. Bank Indonesia menjelaskan QRIS memiliki MPM statis dan dinamis; QRIS dinamis membawa nominal transaksi pada kode QR. 

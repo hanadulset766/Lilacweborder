@@ -1,63 +1,71 @@
-const STORE_KEY="lilacmart_products_v1";
-const CART_KEY="lilacmart_cart_v1";
-const WHATSAPP_NUMBER="6281234567890"; // GANTI dengan nomor WhatsApp toko, tanpa + dan tanpa spasi.
+const CONFIG={
+  storeName:"Lilacmart Store",
+  whatsapp:"6281234567890", // GANTI nomor WhatsApp toko
+  qrisImage:"qris-placeholder.svg" // GANTI dengan file QRIS asli, mis. qris.png
+};
 
-const defaultProducts=[
-  {id:1,name:"Paket Premium",price:25000,image:"💎"},
-  {id:2,name:"Voucher Digital",price:50000,image:"🎟️"},
-  {id:3,name:"Produk Hemat",price:15000,image:"🛍️"},
-  {id:4,name:"Paket Pro",price:75000,image:"🚀"}
+const products=[
+ {id:1,name:"Spotify Premium",cat:"Langganan",price:15000,icon:"🎵"},
+ {id:2,name:"Canva Pro",cat:"Langganan",price:12000,icon:"🎨"},
+ {id:3,name:"Netflix Premium",cat:"Streaming",price:25000,icon:"🎬"},
+ {id:4,name:"Disney+ Hotstar",cat:"Streaming",price:20000,icon:"🏰"},
+ {id:5,name:"ChatGPT Plus",cat:"AI",price:35000,icon:"🤖"},
+ {id:6,name:"YouTube Premium",cat:"Streaming",price:18000,icon:"▶️"},
+ {id:7,name:"CapCut Pro",cat:"Langganan",price:15000,icon:"✂️"},
+ {id:8,name:"Viu Premium",cat:"Streaming",price:12000,icon:"🌷"},
+ {id:9,name:"Alight Motion Pro",cat:"Langganan",price:10000,icon:"✨"},
+ {id:10,name:"Gemini Advanced",cat:"AI",price:30000,icon:"💎"},
+ {id:11,name:"Microsoft 365",cat:"Langganan",price:22000,icon:"📘"},
+ {id:12,name:"Roblox Voucher",cat:"Game",price:25000,icon:"🎮"}
 ];
+let category="Semua",cart=JSON.parse(localStorage.getItem("lilac_cart")||"[]"),lastOrder=null;
 
-function getProducts(){return JSON.parse(localStorage.getItem(STORE_KEY)||"null")||defaultProducts}
-function saveProducts(p){localStorage.setItem(STORE_KEY,JSON.stringify(p))}
-function getCart(){return JSON.parse(localStorage.getItem(CART_KEY)||"[]")}
-function saveCart(c){localStorage.setItem(CART_KEY,JSON.stringify(c))}
 function rupiah(n){return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n)}
-
+function save(){localStorage.setItem("lilac_cart",JSON.stringify(cart));updateCounts()}
+function updateCounts(){let n=cart.reduce((a,b)=>a+b.qty,0);document.querySelectorAll("#cartCount,#bottomCount").forEach(x=>x.textContent=n)}
+function setCategory(c,btn){category=c;document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));btn.classList.add("active");renderProducts()}
 function renderProducts(){
- const el=document.getElementById("products"); if(!el)return;
- const products=getProducts();
- document.getElementById("productCount").textContent=`${products.length} produk`;
- el.innerHTML=products.map(p=>`<article class="card">
-   <div class="product-img">${escapeHtml(p.image||"🛍️")}</div>
-   <h3>${escapeHtml(p.name)}</h3><div class="price">${rupiah(p.price)}</div>
-   <button class="btn primary full" style="margin-top:12px" onclick="addToCart(${p.id})">Tambah</button>
- </article>`).join("");
+ const q=(document.getElementById("search")?.value||"").toLowerCase();
+ const list=products.filter(p=>(category==="Semua"||p.cat===category)&&(p.name.toLowerCase().includes(q)));
+ document.getElementById("activeCount").textContent=products.length;
+ document.getElementById("readyCount").textContent=`(${products.length} produk ready)`;
+ document.getElementById("products").innerHTML=list.map(p=>`<article class="card">
+   <div class="product-img">${p.icon}</div><div class="card-body">
+   <span class="tag">${p.cat}</span><h3>${p.name}</h3><div class="price">${rupiah(p.price)}</div>
+   <button class="buy" onclick="add(${p.id})">Tambah ke Keranjang</button></div></article>`).join("");
 }
-function addToCart(id){
- const c=getCart(), item=c.find(x=>x.id===id);
- if(item)item.qty++; else c.push({id,qty:1});
- saveCart(c); renderCart();
-}
-function changeQty(id,delta){
- const c=getCart().map(x=>x.id===id?{...x,qty:x.qty+delta}:x).filter(x=>x.qty>0);
- saveCart(c);renderCart();
-}
-function clearCart(){saveCart([]);renderCart()}
+function add(id){let x=cart.find(i=>i.id===id);x?x.qty++:cart.push({id,qty:1});save();showToast("Produk ditambahkan ke keranjang 💗")}
+function openCart(){renderCart();document.getElementById("cartModal").classList.add("show")}
+function closeCart(){document.getElementById("cartModal").classList.remove("show")}
 function renderCart(){
- const el=document.getElementById("cart"); if(!el)return;
- const products=getProducts(), cart=getCart();
- if(!cart.length){el.innerHTML="<p class='muted'>Keranjang masih kosong.</p>";document.getElementById("total").textContent=rupiah(0);return}
  let total=0;
- el.innerHTML=cart.map(i=>{
-   const p=products.find(x=>x.id===i.id); if(!p)return "";
-   const sub=p.price*i.qty;total+=sub;
-   return `<div class="cart-row"><div><b>${escapeHtml(p.name)}</b><div class="muted">${rupiah(p.price)} × ${i.qty}</div></div>
-   <div class="qty"><button onclick="changeQty(${i.id},-1)">−</button><b>${i.qty}</b><button onclick="changeQty(${i.id},1)">+</button></div></div>`
- }).join("");
- document.getElementById("total").textContent=rupiah(total);
+ const el=document.getElementById("cartItems");
+ if(!cart.length){el.innerHTML="<p style='color:#856571'>Keranjang masih kosong.</p>";document.getElementById("cartTotal").textContent=rupiah(0);return}
+ el.innerHTML=cart.map(i=>{let p=products.find(x=>x.id===i.id),sub=p.price*i.qty;total+=sub;return `<div class="cart-line"><div><b>${p.name}</b><div>${rupiah(p.price)} × ${i.qty}</div></div><div class="qty"><button onclick="qty(${p.id},-1)">−</button><b>${i.qty}</b><button onclick="qty(${p.id},1)">+</button></div></div>`}).join("");
+ document.getElementById("cartTotal").textContent=rupiah(total);
 }
-function checkoutWhatsApp(){
- const name=document.getElementById("customerName").value.trim();
- const phone=document.getElementById("customerPhone").value.trim();
- const note=document.getElementById("customerNote").value.trim();
- const cart=getCart(),products=getProducts();
- if(!cart.length)return alert("Keranjang masih kosong.");
- if(!name||!phone)return alert("Isi nama dan nomor WhatsApp terlebih dahulu.");
- let total=0, lines=cart.map(i=>{const p=products.find(x=>x.id===i.id);const sub=p.price*i.qty;total+=sub;return `- ${p.name} x${i.qty} = ${rupiah(sub)}`}).join("\n");
- const text=`Halo Lilacmart, saya ingin order:\n\n${lines}\n\nTotal: ${rupiah(total)}\nNama: ${name}\nNo. WhatsApp: ${phone}${note?`\nCatatan: ${note}`:""}`;
- window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`,"_blank");
+function qty(id,d){let x=cart.find(i=>i.id===id);if(!x)return;x.qty+=d;if(x.qty<=0)cart=cart.filter(i=>i.id!==id);save();renderCart()}
+function openCheckout(){if(!cart.length)return showToast("Keranjang masih kosong.");closeCart();let total=cart.reduce((s,i)=>s+products.find(p=>p.id===i.id).price*i.qty,0);document.getElementById("checkoutTotal").textContent=rupiah(total);document.getElementById("checkoutModal").classList.add("show")}
+function closeCheckout(){document.getElementById("checkoutModal").classList.remove("show")}
+function createOrder(){
+ const name=document.getElementById("customerName").value.trim(),phone=document.getElementById("customerPhone").value.trim(),note=document.getElementById("customerNote").value.trim();
+ if(!name||!phone)return showToast("Nama dan nomor WhatsApp wajib diisi.");
+ const total=cart.reduce((s,i)=>s+products.find(p=>p.id===i.id).price*i.qty,0);
+ lastOrder={id:"LM"+Date.now().toString().slice(-8),name,phone,note,total,items:cart.map(i=>({...i,name:products.find(p=>p.id===i.id).name,price:products.find(p=>p.id===i.id).price}))};
+ document.getElementById("invoiceNo").textContent="Invoice #"+lastOrder.id;
+ document.getElementById("qrisTotal").textContent=rupiah(total);
+ document.getElementById("qrisImage").src=CONFIG.qrisImage;
+ closeCheckout();document.getElementById("qrisModal").classList.add("show");
 }
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-document.addEventListener("DOMContentLoaded",()=>{renderProducts();renderCart()});
+function closeQRIS(){document.getElementById("qrisModal").classList.remove("show")}
+function confirmPaid(){showToast("Pesanan disimpan. Silakan kirim detail ke WhatsApp agar diproses.");sendWhatsApp();cart=[];save();closeQRIS()}
+function sendWhatsApp(){
+ if(!lastOrder)return;
+ const lines=lastOrder.items.map(i=>`- ${i.name} x${i.qty} = ${rupiah(i.price*i.qty)}`).join("\n");
+ const msg=`Halo ${CONFIG.storeName}, saya sudah melakukan order.\n\nInvoice: ${lastOrder.id}\n${lines}\n\nTotal: ${rupiah(lastOrder.total)}\nNama: ${lastOrder.name}\nNo. WhatsApp: ${lastOrder.phone}${lastOrder.note?`\nCatatan: ${lastOrder.note}`:""}\n\nMetode pembayaran: QRIS`;
+ window.open(`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`,"_blank");
+}
+function showHelp(){showToast("Bantuan: pilih produk → keranjang → checkout → scan QRIS → konfirmasi via WhatsApp.")}
+function showToast(t){const e=document.getElementById("toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2800)}
+function scrollToTop(){scrollTo({top:0,behavior:"smooth"})}
+document.addEventListener("DOMContentLoaded",()=>{renderProducts();updateCounts()});
