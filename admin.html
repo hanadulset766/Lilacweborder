@@ -1,60 +1,192 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admin - Lilacmart</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Lilacmart</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#fff5f8;color:#3b2630}
+header{background:#d93673;color:#fff;padding:18px 16px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:22px}
+header p{margin:5px 0 0;opacity:.9;font-size:13px}
+.container{max-width:900px;margin:auto;padding:16px}
+.card{background:#fff;border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 4px 18px #00000012}
+input,select,button{font:inherit}
+input,select{width:100%;padding:12px;border:1px solid #ead1dc;border-radius:12px;margin:6px 0 10px;background:#fff}
+button{border:0;border-radius:12px;padding:11px 14px;cursor:pointer}
+.primary{background:#d93673;color:#fff}
+.secondary{background:#fde3ec;color:#b5225b}
+.danger{background:#ffe1e1;color:#a00000}
+.hidden{display:none!important}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#fff0f5;border-radius:14px;padding:14px;text-align:center}
+.stat b{display:block;font-size:20px;color:#d93673}
+.order{border:1px solid #f0d8e2;border-radius:15px;padding:14px;margin-top:12px}
+.order-head{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.badge{display:inline-block;padding:5px 9px;border-radius:99px;background:#fff0b8;font-size:12px}
+.items{font-size:14px;line-height:1.6;margin:10px 0}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.small{font-size:12px;color:#806874}
+.login{max-width:420px;margin:70px auto}
+@media(max-width:600px){.stats{grid-template-columns:1fr 1fr}.order-head{display:block}}
+</style>
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">💜 Lilacmart Admin</div>
-  <a class="admin-link" href="index.html">Toko</a>
+
+<header>
+  <h1>🌸 Lilacmart Admin</h1>
+  <p>Manajemen pesanan & verifikasi pembayaran</p>
 </header>
 
-<main class="container narrow">
-  <section id="loginView" class="login-card">
-    <div class="avatar">🔐</div>
-    <h1>Login Admin</h1>
-    <p class="muted">Masuk untuk mengelola produk demo.</p>
-    <form id="loginForm">
-      <label>Username<input id="username" autocomplete="username" required></label>
-      <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
-      <button class="btn primary full">Masuk</button>
-      <p id="loginError" class="error"></p>
-    </form>
-    <div class="demo-box"><b>Demo:</b> admin / Admin123!</div>
-  </section>
+<main class="container">
 
-  <section id="dashboard" class="hidden">
-    <div class="section-head">
-      <div><h1>Dashboard</h1><p class="muted">Kelola produk yang tampil di toko.</p></div>
-      <button class="btn danger" onclick="logoutAdmin()">Keluar</button>
+<section id="loginBox" class="card login">
+  <h2>🔐 Login Admin</h2>
+  <p class="small">Masukkan PIN admin.</p>
+  <input id="pin" type="password" inputmode="numeric" placeholder="PIN admin">
+  <button class="primary" style="width:100%" onclick="login()">Masuk</button>
+  <p id="loginError" class="small"></p>
+</section>
+
+<section id="adminPanel" class="hidden">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+      <div>
+        <h2 style="margin:0">📋 Pesanan</h2>
+        <p class="small">Kelola status order dari perangkat ini.</p>
+      </div>
+      <button class="secondary" onclick="logout()">Keluar</button>
     </div>
+  </div>
 
-    <div class="stats">
-      <div><span>Produk</span><strong id="statProducts">0</strong></div>
-      <div><span>Pesanan demo</span><strong id="statOrders">0</strong></div>
+  <div class="stats">
+    <div class="stat"><b id="totalCount">0</b>Total</div>
+    <div class="stat"><b id="waitingCount">0</b>Menunggu</div>
+    <div class="stat"><b id="paidCount">0</b>Dibayar</div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <input id="search" placeholder="Cari invoice / nama / WhatsApp..." oninput="render()">
+    <select id="filter" onchange="render()">
+      <option value="Semua">Semua status</option>
+      <option value="Menunggu verifikasi">Menunggu verifikasi</option>
+      <option value="Dibayar">Dibayar</option>
+      <option value="Diproses">Diproses</option>
+      <option value="Selesai">Selesai</option>
+      <option value="Dibatalkan">Dibatalkan</option>
+    </select>
+    <div class="actions">
+      <button class="secondary" onclick="refresh()">↻ Refresh</button>
+      <button class="danger" onclick="clearOrders()">Hapus semua order</button>
     </div>
+  </div>
 
-    <section class="panel">
-      <h2>Tambah Produk</h2>
-      <form id="productForm" class="form-grid">
-        <label>Nama Produk<input id="pName" required></label>
-        <label>Harga (Rp)<input id="pPrice" type="number" min="0" required></label>
-        <label>Emoji/Gambar<input id="pImage" value="🛍️"></label>
-        <button class="btn primary">Tambah</button>
-      </form>
-    </section>
+  <div id="orders"></div>
+</section>
 
-    <section class="panel">
-      <h2>Daftar Produk</h2>
-      <div id="adminProducts"></div>
-    </section>
-  </section>
 </main>
 
-<footer>Panel admin demo • GitHub Pages</footer>
-<script src="admin.js"></script>
+<script>
+const ADMIN_PIN = "123456";
+const ORDERS_KEY = "lilac_orders";
+const SESSION_KEY = "lilac_admin_login";
+
+function getOrders(){
+  try{return JSON.parse(localStorage.getItem(ORDERS_KEY)||"[]")}catch(e){return []}
+}
+function saveOrders(o){localStorage.setItem(ORDERS_KEY,JSON.stringify(o))}
+function login(){
+  const pin=document.getElementById("pin").value;
+  if(pin===ADMIN_PIN){
+    sessionStorage.setItem(SESSION_KEY,"1");
+    showAdmin();
+  }else{
+    document.getElementById("loginError").textContent="PIN salah.";
+  }
+}
+function logout(){
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+function showAdmin(){
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("adminPanel").classList.remove("hidden");
+  render();
+}
+function rupiah(n){
+  return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
+}
+function esc(s){
+  return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+}
+function render(){
+  const q=(document.getElementById("search").value||"").toLowerCase();
+  const filter=document.getElementById("filter").value;
+  let orders=getOrders();
+  const total=orders.length;
+  const waiting=orders.filter(o=>(o.paymentStatus||"Menunggu verifikasi")==="Menunggu verifikasi").length;
+  const paid=orders.filter(o=>["Dibayar","Diproses","Selesai"].includes(o.paymentStatus)).length;
+  document.getElementById("totalCount").textContent=total;
+  document.getElementById("waitingCount").textContent=waiting;
+  document.getElementById("paidCount").textContent=paid;
+
+  orders=orders.filter(o=>{
+    const status=o.paymentStatus||"Menunggu verifikasi";
+    const hay=[o.id,o.name,o.phone].join(" ").toLowerCase();
+    return (!q||hay.includes(q))&&(filter==="Semua"||status===filter);
+  }).reverse();
+
+  const box=document.getElementById("orders");
+  if(!orders.length){
+    box.innerHTML='<div class="card"><b>Belum ada pesanan.</b><p class="small">Order yang tersimpan di perangkat ini akan muncul di sini.</p></div>';
+    return;
+  }
+
+  box.innerHTML=orders.map(o=>{
+    const status=o.paymentStatus||"Menunggu verifikasi";
+    const items=(o.items||[]).map(i=>`• ${esc(i.name)} ×${i.qty} — ${rupiah(i.price*i.qty)}`).join("<br>");
+    return `<article class="order">
+      <div class="order-head">
+        <div><b>${esc(o.id)}</b><br><span class="small">${esc(o.name)} · ${esc(o.phone)}</span></div>
+        <span class="badge">${esc(status)}</span>
+      </div>
+      <div class="items">${items||"Tidak ada detail produk"}</div>
+      <b>Total: ${rupiah(o.total)}</b>
+      ${o.note?`<p class="small">Catatan: ${esc(o.note)}</p>`:""}
+      <p class="small">Dibuat: ${o.createdAt?new Date(o.createdAt).toLocaleString("id-ID"):"-"}</p>
+      <div class="actions">
+        <button class="secondary" onclick="setStatus('${esc(o.id)}','Dibayar')">✓ Dibayar</button>
+        <button class="secondary" onclick="setStatus('${esc(o.id)}','Diproses')">⚙ Diproses</button>
+        <button class="secondary" onclick="setStatus('${esc(o.id)}','Selesai')">✓ Selesai</button>
+        <button class="danger" onclick="setStatus('${esc(o.id)}','Dibatalkan')">× Batalkan</button>
+        <button class="primary" onclick="wa('${esc(o.phone)}','${esc(o.id)}')">WhatsApp</button>
+      </div>
+    </article>`;
+  }).join("");
+}
+function setStatus(id,status){
+  const orders=getOrders();
+  const o=orders.find(x=>x.id===id);
+  if(!o)return;
+  o.paymentStatus=status;
+  o.statusUpdatedAt=new Date().toISOString();
+  saveOrders(orders);
+  render();
+}
+function wa(phone,id){
+  const n=String(phone||"").replace(/\D/g,"");
+  if(!n)return;
+  location.href=`https://wa.me/${n}?text=${encodeURIComponent("Halo, terkait pesanan "+id+" dari Lilacmart.")}`;
+}
+function refresh(){render()}
+function clearOrders(){
+  if(confirm("Hapus semua order yang tersimpan di perangkat ini?")){
+    localStorage.removeItem(ORDERS_KEY);
+    render();
+  }
+}
+if(sessionStorage.getItem(SESSION_KEY)==="1")showAdmin();
+</script>
 </body>
 </html>

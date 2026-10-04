@@ -1,0 +1,18 @@
+LILACMART ADMIN - CARA PASANG
+
+1. Upload admin.html ke repository GitHub yang sama dengan index.html dan app.js.
+2. Buka:
+   https://hanadulset766.github.io/Lilacweborder/admin.html
+3. PIN demo: 123456
+4. Agar order yang sudah dibayar masuk ke Admin, tambahkan penyimpanan order berikut ke fungsi confirmPaid() di app.js, setelah localStorage.setItem("lilac_last_order", ...):
+
+const orders = JSON.parse(localStorage.getItem("lilac_orders") || "[]");
+const existing = orders.findIndex(o => o.id === lastOrder.id);
+if(existing >= 0) orders[existing] = lastOrder;
+else orders.push(lastOrder);
+localStorage.setItem("lilac_orders", JSON.stringify(orders));
+
+PENTING:
+Versi admin ini menggunakan localStorage, jadi order hanya terlihat pada browser/perangkat yang menyimpan order tersebut. GitHub Pages tidak menyediakan database bersama antar pelanggan dan admin.
+
+Untuk admin yang dapat melihat order dari HP admin sementara pelanggan memakai HP lain, diperlukan backend/database (misalnya Supabase/Firebase/Google Sheets API) dan sebaiknya autentikasi server-side. Jangan menyimpan password/PIN rahasia sebagai pengaman utama di HTML publik.
