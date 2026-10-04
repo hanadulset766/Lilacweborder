@@ -73,9 +73,6 @@ function confirmPaid(){
   localStorage.setItem("lilac_last_order", JSON.stringify(lastOrder));
 
   showToast("Pesanan tersimpan. WhatsApp akan dibuka...");
-
-  showToast("Pesanan tersimpan. Membuka WhatsApp...");
-sendWhatsApp();
 }
 
 function sendWhatsApp(){
