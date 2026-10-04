@@ -5,19 +5,123 @@ const CONFIG={
 };
 
 const products=[
- {id:1,name:"Spotify Premium",cat:"Langganan",price:15000,icon:"🎵"},
- {id:2,name:"Canva Pro",cat:"Langganan",price:12000,icon:"🎨"},
- {id:3,name:"Netflix Premium",cat:"Streaming",price:25000,icon:"🎬"},
- {id:4,name:"Disney+ Hotstar",cat:"Streaming",price:20000,icon:"🏰"},
- {id:5,name:"ChatGPT Plus",cat:"AI",price:35000,icon:"🤖"},
- {id:6,name:"YouTube Premium",cat:"Streaming",price:18000,icon:"▶️"},
- {id:7,name:"CapCut Pro",cat:"Langganan",price:15000,icon:"✂️"},
- {id:8,name:"Viu Premium",cat:"Streaming",price:12000,icon:"🌷"},
- {id:9,name:"Alight Motion Pro",cat:"Langganan",price:10000,icon:"✨"},
- {id:10,name:"Gemini Advanced",cat:"AI",price:30000,icon:"💎"},
- {id:11,name:"Microsoft 365",cat:"Langganan",price:22000,icon:"📘"},
- {id:12,name:"Roblox Voucher",cat:"Game",price:25000,icon:"🎮"}
-];
+let products = [];
+
+const SHEET_CSV_URL =
+"https://docs.google.com/spreadsheets/d/1OGqnNp5BYmE252a59vPxz9ooyCukkfqfa3lqz49jrNc/gviz/tq?tqx=out:csv&sheet=Katalog";
+
+function parseCSV(text){
+  const rows=[];
+  let row=[];
+  let cell="";
+  let quoted=false;
+
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    const next=text[i+1];
+
+    if(c === '"' && quoted && next === '"'){
+      cell+='"';
+      i++;
+    }else if(c === '"'){
+      quoted=!quoted;
+    }else if(c === "," && !quoted){
+      row.push(cell);
+      cell="";
+    }else if((c === "\n" || c === "\r") && !quoted){
+      if(c === "\r" && next === "\n") i++;
+      row.push(cell);
+      if(row.some(x=>x.trim()!=="")) rows.push(row);
+      row=[];
+      cell="";
+    }else{
+      cell+=c;
+    }
+  }
+
+  if(cell!=="" || row.length){
+    row.push(cell);
+    if(row.some(x=>x.trim()!=="")) rows.push(row);
+  }
+
+  return rows;
+}
+
+async function loadProducts(){
+  try{
+    const response = await fetch(SHEET_CSV_URL, {
+      cache:"no-store"
+    });
+
+    if(!response.ok){
+      throw new Error("Gagal mengambil Google Sheets");
+    }
+
+    const csv = await response.text();
+    const rows = parseCSV(csv);
+
+    if(rows.length < 2){
+      throw new Error("Data katalog kosong");
+    }
+
+    const headers = rows[0].map(x=>x.trim());
+
+    products = rows.slice(1).map(row=>{
+      const data={};
+
+      headers.forEach((header,index)=>{
+        data[header]=
+          row[index] !== undefined
+          ? row[index].trim()
+          : "";
+      });
+
+      return {
+        id:Number(data["ID"]) || 0,
+        name:data["Nama Produk"] || "Produk",
+        cat:data["Kategori"] || "Lainnya",
+        price:Number(
+          String(data["Harga"] || "0")
+            .replace(/[^\d]/g,"")
+        ) || 0,
+        icon:data["Icon"] || "🛍️",
+        image:data["URL Gambar"] || "",
+        description:data["Deskripsi"] || "",
+        status:data["Status"] || "Ready"
+      };
+    }).filter(p=>p.id && p.name);
+
+    renderProducts();
+
+    const ready = products.filter(
+      p => p.status.toLowerCase() === "ready"
+    ).length;
+
+    const readyEl=document.getElementById("readyCount");
+    if(readyEl){
+      readyEl.textContent=`(${ready} produk ready)`;
+    }
+
+    const activeEl=document.getElementById("activeCount");
+    if(activeEl){
+      activeEl.textContent=products.length;
+    }
+
+  }catch(error){
+    console.error("Gagal memuat katalog:",error);
+
+    const box=document.getElementById("products");
+
+    if(box){
+      box.innerHTML=`
+        <div style="padding:20px;text-align:center">
+          <h3>⚠️ Katalog belum dapat dimuat</h3>
+          <p>Periksa koneksi internet atau Google Sheets.</p>
+        </div>
+      `;
+    }
+  }
+}
 let category="Semua",cart=JSON.parse(localStorage.getItem("lilac_cart")||"[]"),lastOrder=null;
 
 function rupiah(n){return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n)}
@@ -30,7 +134,15 @@ function renderProducts(){
  document.getElementById("activeCount").textContent=products.length;
  document.getElementById("readyCount").textContent=`(${products.length} produk ready)`;
  document.getElementById("products").innerHTML=list.map(p=>`<article class="card">
-   <div class="product-img">${p.icon}</div><div class="card-body">
+   <div class="product-img">
+  ${
+    p.image
+      ? `<img src="${p.image}" alt="${p.name}" loading="lazy"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+         <span style="display:none">${p.icon}</span>`
+      : `<span>${p.icon}</span>`
+  }
+</div>
    <span class="tag">${p.cat}</span><h3>${p.name}</h3><div class="price">${rupiah(p.price)}</div>
    <button class="buy" onclick="add(${p.id})">Tambah ke Keranjang</button></div></article>`).join("");
 }
@@ -183,6 +295,6 @@ function scrollToTop(){
 
 
 document.addEventListener("DOMContentLoaded", function(){
-  renderProducts();
+  loadProducts();
   updateCounts();
 });
