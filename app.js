@@ -46,7 +46,121 @@ function parseCSV(text){
   return rows;
 }
 
-async function loadProducts(){
+function loadProducts(){
+
+  window.lilacSheetCallback = function(data){
+
+    try{
+
+      if(!data || !data.table){
+        throw new Error("Data Google Sheets tidak ditemukan");
+      }
+
+      const cols = data.table.cols || [];
+      const rows = data.table.rows || [];
+
+      products = rows.map(row => {
+
+        const values = (row.c || []).map(cell =>
+          cell && cell.v !== undefined && cell.v !== null
+            ? String(cell.v)
+            : ""
+        );
+
+        const dataRow = {};
+
+        cols.forEach((col,index) => {
+          dataRow[col.label] = values[index] || "";
+        });
+
+        return {
+          id: Number(dataRow["ID"]) || 0,
+          name: dataRow["Nama Produk"] || "Produk",
+          cat: dataRow["Kategori"] || "Lainnya",
+          price: Number(
+            String(dataRow["Harga"] || "0")
+              .replace(/[^\d]/g,"")
+          ) || 0,
+          icon: dataRow["Icon"] || "🛍️",
+          image: dataRow["URL Gambar"] || "",
+          description: dataRow["Deskripsi"] || "",
+          status: dataRow["Status"] || "Ready"
+        };
+
+      }).filter(p => p.id && p.name);
+
+      renderProducts();
+
+      const ready = products.filter(
+        p => p.status.toLowerCase() === "ready"
+      ).length;
+
+      const readyEl = document.getElementById("readyCount");
+
+      if(readyEl){
+        readyEl.textContent = `(${ready} produk ready)`;
+      }
+
+      const activeEl = document.getElementById("activeCount");
+
+      if(activeEl){
+        activeEl.textContent = products.length;
+      }
+
+      console.log("Katalog berhasil dimuat:", products);
+
+    }catch(error){
+
+      console.error("Gagal memproses katalog:",error);
+
+      const box = document.getElementById("products");
+
+      if(box){
+        box.innerHTML = `
+          <div style="padding:20px;text-align:center">
+            <h3>⚠️ Katalog belum dapat dimuat</h3>
+            <p>Data Google Sheets bermasalah.</p>
+          </div>
+        `;
+      }
+
+    }
+
+  };
+
+  const oldScript = document.getElementById("lilac-sheet-script");
+
+  if(oldScript){
+    oldScript.remove();
+  }
+
+  const script = document.createElement("script");
+
+  script.id = "lilac-sheet-script";
+
+  script.src =
+    "https://docs.google.com/spreadsheets/d/1OGqnNp5BYmE252a59vPxz9ooyCukkfqfa3lqz49jrNc/gviz/tq?sheet=Katalog&tqx=out:json;responseHandler:lilacSheetCallback";
+
+  script.onerror = function(){
+
+    console.error("Google Sheets gagal dimuat");
+
+    const box = document.getElementById("products");
+
+    if(box){
+      box.innerHTML = `
+        <div style="padding:20px;text-align:center">
+          <h3>⚠️ Katalog belum dapat dimuat</h3>
+          <p>Google Sheets tidak dapat diakses.</p>
+        </div>
+      `;
+    }
+
+  };
+
+  document.head.appendChild(script);
+
+}
   try{
     const response = await fetch(SHEET_CSV_URL, {
       cache:"no-store"
