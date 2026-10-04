@@ -108,10 +108,22 @@ async function confirmPaid(){
   try {
     await LilacDB.saveOrder(lastOrder);
   } catch (err) {
-    showToast("Order gagal disimpan ke server. Coba lagi.");
-    console.error(err);
-    return;
+  console.error("SUPABASE ERROR:", err);
+
+  const code = err && err.code ? err.code : "";
+  const message = err && err.message ? err.message : "Kesalahan tidak diketahui";
+  const hint = err && err.hint ? err.hint : "";
+
+  showToast(
+    "Supabase " + code + ": " + message
+  );
+
+  if (hint) {
+    console.error("Supabase HINT:", hint);
   }
+
+  return;
+}
 
   const url = buildWhatsAppUrl();
 
