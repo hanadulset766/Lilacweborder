@@ -136,22 +136,6 @@ function kirimWhatsApp(){
   return sendWhatsApp();
 }
 
-function sendWhatsApp(){
-  const url = buildWhatsAppUrl();
-
-  if(!url) return;
-
-  window.location.href = url;
-}
-
-function konfirmasiDibayar(){
-  return confirmPaid();
-}
-
-function kirimWhatsApp(){
-  return sendWhatsApp();
-}
-
 function closeQRIS(){
   const qrModal = document.getElementById("qrisModal");
 
