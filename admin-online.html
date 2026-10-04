@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lilacmart Admin Online</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f7f3fb;margin:0;color:#222}
+header{background:#7b3fb2;color:white;padding:18px}
+main{max-width:1000px;margin:auto;padding:16px}
+.card{background:white;border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 3px 15px #0001}
+input,select,button{width:100%;padding:12px;margin:7px 0;border-radius:10px;border:1px solid #ddd;font-size:15px}
+button{background:#7b3fb2;color:white;border:0;font-weight:bold}
+.hidden{display:none}.msg{padding:10px;background:#eee8f7;border-radius:10px;margin-top:10px}
+.wrap{overflow:auto}table{width:100%;min-width:760px;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
+#logout{width:auto;background:white;color:#7b3fb2;float:right}
+</style>
+</head>
+<body>
+<header><button id="logout" class="hidden">Keluar</button><b>Lilacmart Admin Online</b><br><small>Kelola pesanan Supabase</small></header>
+<main>
+<section id="login" class="card">
+<h2>Login Admin</h2>
+<input id="email" type="email" placeholder="Email admin">
+<input id="password" type="password" placeholder="Password">
+<button id="loginBtn">Login</button>
+<div id="loginMsg" class="msg hidden"></div>
+</section>
+
+<section id="panel" class="hidden">
+<div class="card"><button id="refresh">Refresh Pesanan</button><div id="msg" class="msg hidden"></div></div>
+<div class="card wrap">
+<table><thead><tr><th>Invoice</th><th>Pelanggan</th><th>Pesanan</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead>
+<tbody id="rows"></tbody></table>
+</div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="online-db.js"></script>
+<script>
+const authClient=window.supabase.createClient(window.LILAC_SUPABASE_URL,window.LILAC_SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+const statuses=["Menunggu verifikasi","Dibayar","Diproses","Selesai","Dibatalkan"];
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function money(v){return "Rp"+Number(v||0).toLocaleString("id-ID")}
+function items(a){return Array.isArray(a)?a.map(x=>(x.name||x.title||"Produk")+" x"+(x.qty||x.quantity||1)+" = "+money((x.price||0)*(x.qty||x.quantity||1))).join("<br>"):""}
+function notice(t){$("msg").textContent=t;$("msg").classList.remove("hidden")}
+async function load(){
+ $("rows").innerHTML="<tr><td colspan='6'>Memuat...</td></tr>";
+ try{
+  const data=await window.LilacDB.listOrders();
+  if(!data.length){$("rows").innerHTML="<tr><td colspan='6'>Belum ada pesanan.</td></tr>";return}
+  $("rows").innerHTML=data.map(o=>{
+   const opts=statuses.map(s=>"<option "+(o.payment_status===s?"selected":"")+" value='"+esc(s)+"'>"+esc(s)+"</option>").join("");
+   return "<tr><td><b>"+esc(o.id)+"</b></td><td>"+esc(o.name)+"<br>"+esc(o.phone)+"</td><td>"+items(o.items)+"</td><td><b>"+money(o.total)+"</b></td><td>"+esc(o.payment_status)+"</td><td><select id='s_"+esc(o.id)+"'>"+opts+"</select><button onclick="saveStatus('"+esc(o.id)+"')">Simpan</button></td></tr>"
+  }).join("");
+ }catch(e){$("rows").innerHTML="<tr><td colspan='6'>Gagal memuat.</td></tr>";notice(e.message||String(e))}
+}
+async function saveStatus(id){
+ const sel=document.getElementById("s_"+id);
+ try{await window.LilacDB.updateStatus(id,sel.value);notice("Status "+id+" berhasil diubah.");await load()}
+ catch(e){notice("Gagal: "+(e.message||String(e)))}
+}
+async function show(){
+ const {data:{session}}=await authClient.auth.getSession();
+ if(session){$("login").classList.add("hidden");$("panel").classList.remove("hidden");$("logout").classList.remove("hidden");await load()}
+}
+$("loginBtn").onclick=async()=>{
+ $("loginMsg").classList.add("hidden");
+ try{
+  const {error}=await authClient.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+  if(error)throw error; await show();
+ }catch(e){$("loginMsg").textContent="Login gagal: "+(e.message||e);$("loginMsg").classList.remove("hidden")}
+};
+$("refresh").onclick=load;
+$("logout").onclick=async()=>{await authClient.auth.signOut();location.reload()};
+show();
+</script>
+</body>
+</html>
