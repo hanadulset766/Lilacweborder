@@ -91,7 +91,34 @@ Mohon diproses pesanannya. Terima kasih 🙏`;
   return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
 }
 
-function confirmPaid(){
+async function confirmPaid(){
+  if(!lastOrder){
+    showToast("Data pesanan belum tersedia.");
+    return;
+  }
+
+  lastOrder.paymentStatus = "Menunggu verifikasi";
+  lastOrder.paidAt = new Date().toISOString();
+
+  localStorage.setItem(
+    "lilac_last_order",
+    JSON.stringify(lastOrder)
+  );
+
+  try {
+    await LilacDB.saveOrder(lastOrder);
+  } catch (err) {
+    showToast("Order gagal disimpan ke server. Coba lagi.");
+    console.error(err);
+    return;
+  }
+
+  const url = buildWhatsAppUrl();
+
+  if(!url) return;
+
+  window.location.href = url;
+}
   if(!lastOrder){
     showToast("Data pesanan belum tersedia.");
     return;
