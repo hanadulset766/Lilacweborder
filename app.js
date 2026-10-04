@@ -66,35 +66,28 @@ function loadProducts(){
 
       products = rows.map(function(row){
 
-        const values = (row.c || []).map(function(cell){
-          return cell && cell.v !== undefined && cell.v !== null
-            ? String(cell.v)
-            : "";
-        });
+  const c = row.c || [];
 
-        const dataRow = {};
+  function val(i){
+    return c[i] && c[i].v !== undefined && c[i].v !== null
+      ? String(c[i].v)
+      : "";
+  }
 
-        cols.forEach(function(col,index){
-          dataRow[col.label] = values[index] || "";
-        });
+  return {
+    id: Number(val(0)) || 0,
+    name: val(1) || "Produk",
+    cat: val(2) || "Lainnya",
+    price: Number(val(3).replace(/[^\d]/g,"")) || 0,
+    icon: val(4) || "🛍️",
+    image: val(5) || "",
+    description: val(6) || "",
+    status: val(7) || "Ready"
+  };
 
-        return {
-          id: Number(dataRow["ID"]) || 0,
-          name: dataRow["Nama Produk"] || "Produk",
-          cat: dataRow["Kategori"] || "Lainnya",
-          price: Number(
-            String(dataRow["Harga"] || "0")
-              .replace(/[^\d]/g,"")
-          ) || 0,
-          icon: dataRow["Icon"] || "🛍️",
-          image: dataRow["URL Gambar"] || "",
-          description: dataRow["Deskripsi"] || "",
-          status: dataRow["Status"] || "Ready"
-        };
-
-      }).filter(function(p){
-        return p.id && p.name;
-      });
+}).filter(function(p){
+  return p.id > 0 && p.name.trim() !== "";
+});
 
       renderProducts();
 
