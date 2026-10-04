@@ -119,6 +119,7 @@ async function confirmPaid(){
 
   window.location.href = url;
 }
+  async function confirmPaid(){
   if(!lastOrder){
     showToast("Data pesanan belum tersedia.");
     return;
@@ -132,12 +133,22 @@ async function confirmPaid(){
     JSON.stringify(lastOrder)
   );
 
+  try {
+    await LilacDB.saveOrder(lastOrder);
+  } catch (err) {
+    showToast("Order gagal disimpan ke server. Coba lagi.");
+    console.error(err);
+    return;
+  }
+
   const url = buildWhatsAppUrl();
 
   if(!url) return;
 
   window.location.href = url;
 }
+
+function sendWhatsApp(){
 
 function sendWhatsApp(){
   const url = buildWhatsAppUrl();
