@@ -1,7 +1,7 @@
 const CONFIG={
   storeName:"Lilacmart Store",
-  whatsapp:"6281234567890", // GANTI nomor WhatsApp toko
-  qrisImage:"qris-placeholder.svg" // GANTI dengan file QRIS asli, mis. qris.png
+  whatsapp:"6289513348955", // GANTI nomor WhatsApp toko
+  qrisImage:"qris.jpg" // GANTI dengan file QRIS asli, mis. qris.png
 };
 
 const products=[
