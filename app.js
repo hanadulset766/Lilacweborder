@@ -61,45 +61,17 @@ function closeQRIS(){
   document.getElementById("qrisModal").classList.remove("show");
 }
 
-function confirmPaid(){
+function buildWhatsAppUrl(){
   if(!lastOrder){
     showToast("Data pesanan belum tersedia.");
-    return;
+    return null;
   }
 
-  lastOrder.paymentStatus = "Menunggu verifikasi";
-  lastOrder.paidAt = new Date().toISOString();
-
-  localStorage.setItem(
-    "lilac_last_order",
-    JSON.stringify(lastOrder)
-  );
-
-  showToast("Pesanan tersimpan. Membuka WhatsApp...");
-
-  // Tutup QRIS
-  const qrModal = document.getElementById("qrisModal");
-  if(qrModal){
-    qrModal.classList.remove("show");
-  }
-
-  // BUKA WHATSAPP LANGSUNG
-  sendWhatsApp();
-}
-
-
-function sendWhatsApp(){
-  if(!lastOrder){
-    showToast("Data pesanan belum tersedia.");
-    return;
-  }
-
-  const lines = lastOrder.items.map(function(item){
+  const lines = (lastOrder.items || []).map(function(item){
     return `${item.name} x${item.qty} = ${rupiah(item.price * item.qty)}`;
   }).join("\n");
 
-  const msg =
-`HALO LILACMART 👋
+  const msg = `HALO LILACMART 👋
 
 Saya sudah melakukan pembayaran QRIS.
 
@@ -116,24 +88,45 @@ Status pembayaran: ${lastOrder.paymentStatus || "Menunggu verifikasi"}
 
 Mohon diproses pesanannya. Terima kasih 🙏`;
 
-  const url =
-    `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
+  return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
+}
 
-  // Jangan pakai setTimeout/window.open.
-  // location.href lebih aman di Chrome Android.
+function confirmPaid(){
+  if(!lastOrder){
+    showToast("Data pesanan belum tersedia.");
+    return;
+  }
+
+  lastOrder.paymentStatus = "Menunggu verifikasi";
+  lastOrder.paidAt = new Date().toISOString();
+
+  localStorage.setItem(
+    "lilac_last_order",
+    JSON.stringify(lastOrder)
+  );
+
+  const url = buildWhatsAppUrl();
+
+  if(!url) return;
+
   window.location.href = url;
 }
 
+function sendWhatsApp(){
+  const url = buildWhatsAppUrl();
 
-// Alias untuk tombol versi bahasa Indonesia
+  if(!url) return;
+
+  window.location.href = url;
+}
+
 function konfirmasiDibayar(){
-  confirmPaid();
+  return confirmPaid();
 }
 
 function kirimWhatsApp(){
-  sendWhatsApp();
+  return sendWhatsApp();
 }
-
 
 function closeQRIS(){
   const qrModal = document.getElementById("qrisModal");
