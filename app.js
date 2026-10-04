@@ -57,15 +57,61 @@ function createOrder(){
  document.getElementById("qrisImage").src=CONFIG.qrisImage;
  closeCheckout();document.getElementById("qrisModal").classList.add("show");
 }
-function closeQRIS(){document.getElementById("qrisModal").classList.remove("show")}
-function confirmPaid(){showToast("Pesanan disimpan. Silakan kirim detail ke WhatsApp agar diproses.");sendWhatsApp();cart=[];save();closeQRIS()}
-function sendWhatsApp(){
- if(!lastOrder)return;
- const lines=lastOrder.items.map(i=>`- ${i.name} x${i.qty} = ${rupiah(i.price*i.qty)}`).join("\n");
- const msg=`Halo ${CONFIG.storeName}, saya sudah melakukan order.\n\nInvoice: ${lastOrder.id}\n${lines}\n\nTotal: ${rupiah(lastOrder.total)}\nNama: ${lastOrder.name}\nNo. WhatsApp: ${lastOrder.phone}${lastOrder.note?`\nCatatan: ${lastOrder.note}`:""}\n\nMetode pembayaran: QRIS`;
- window.open(`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`,"_blank");
+function closeQRIS(){
+  document.getElementById("qrisModal").classList.remove("show");
 }
-function showHelp(){showToast("Bantuan: pilih produk → keranjang → checkout → scan QRIS → konfirmasi via WhatsApp.")}
+
+function confirmPaid(){
+  if(!lastOrder){
+    showToast("Data pesanan belum tersedia.");
+    return;
+  }
+
+  lastOrder.paymentStatus = "Menunggu verifikasi";
+  lastOrder.paidAt = new Date().toISOString();
+
+  localStorage.setItem("lilac_last_order", JSON.stringify(lastOrder));
+
+  showToast("Pesanan tersimpan. WhatsApp akan dibuka...");
+
+  setTimeout(function(){
+    sendWhatsApp();
+  }, 700);
+}
+
+function sendWhatsApp(){
+  if(!lastOrder){
+    showToast("Data pesanan belum tersedia.");
+    return;
+  }
+
+  const lines = lastOrder.items.map(function(item){
+    return `${item.name} x${item.qty} = ${rupiah(item.price * item.qty)}`;
+  }).join("\n");
+
+  const msg =
+`HALO LILACMART 👋
+
+Saya sudah melakukan pembayaran QRIS.
+
+Invoice: ${lastOrder.id}
+Nama: ${lastOrder.name}
+WhatsApp: ${lastOrder.phone}
+
+DETAIL PESANAN:
+${lines}
+
+TOTAL: ${rupiah(lastOrder.total)}
+
+Status pembayaran: ${lastOrder.paymentStatus || "Menunggu verifikasi"}
+
+Mohon diproses pesanannya. Terima kasih 🙏`;
+
+  const url =
+    `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
+
+  window.open(url, "_blank");
+}
 function showToast(t){const e=document.getElementById("toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2800)}
 function scrollToTop(){scrollTo({top:0,behavior:"smooth"})}
 document.addEventListener("DOMContentLoaded",()=>{renderProducts();updateCounts()});
