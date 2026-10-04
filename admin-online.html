@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lilacmart Admin Online</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f7f3fb;margin:0;color:#222}
+header{background:#7b3fb2;color:#fff;padding:18px;font-size:21px;font-weight:700}
+header small{display:block;font-size:15px;font-weight:400;margin-top:5px}
+main{max-width:1000px;margin:auto;padding:16px}
+.card{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 3px 15px #0001}
+h2{margin-top:0}
+input,select,button{width:100%;padding:14px;margin:7px 0;border-radius:10px;border:1px solid #ddd;font-size:16px}
+button{background:#7b3fb2;color:#fff;border:0;font-weight:700;cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.6}
+.msg{padding:12px;border-radius:10px;margin-top:10px;background:#eee8f7;display:none}
+.wrap{overflow:auto}
+table{width:100%;min-width:760px;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
+.hidden{display:none!important}
+#logout{width:auto;background:#fff;color:#7b3fb2;float:right;padding:8px 12px;margin:0}
+</style>
+</head>
+<body>
+<header>
+<button id="logout" class="hidden">Keluar</button>
+Lilacmart Admin Online
+<small>Kelola pesanan Supabase</small>
+</header>
+
+<main>
+<section id="loginBox" class="card">
+<h2>Login Admin</h2>
+<input id="email" type="email" autocomplete="username" placeholder="Email admin">
+<input id="password" type="password" autocomplete="current-password" placeholder="Password">
+<button id="loginBtn" type="button">Login</button>
+<div id="loginMsg" class="msg"></div>
+</section>
+
+<section id="panel" class="hidden">
+<div class="card">
+<button id="refreshBtn" type="button">Refresh Pesanan</button>
+<div id="adminMsg" class="msg"></div>
+</div>
+<div class="card wrap">
+<table>
+<thead><tr><th>Invoice</th><th>Pelanggan</th><th>Pesanan</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead>
+<tbody id="rows"><tr><td colspan="6">Memuat...</td></tr></tbody>
+</table>
+</div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="online-db.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  const loginBox=document.getElementById("loginBox");
+  const panel=document.getElementById("panel");
+  const loginBtn=document.getElementById("loginBtn");
+  const loginMsg=document.getElementById("loginMsg");
+  const adminMsg=document.getElementById("adminMsg");
+  const rows=document.getElementById("rows");
+  const logout=document.getElementById("logout");
+
+  function show(el,text){
+    el.textContent=text;
+    el.style.display="block";
+  }
+  function esc(v){
+    return String(v==null?"":v).replace(/[&<>"']/g,function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];
+    });
+  }
+  function money(v){return "Rp"+Number(v||0).toLocaleString("id-ID");}
+
+  if(!window.supabase){
+    show(loginMsg,"Library Supabase belum termuat. Muat ulang halaman.");
+    return;
+  }
+  if(!window.LILAC_SUPABASE_URL || !window.LILAC_SUPABASE_KEY){
+    show(loginMsg,"Konfigurasi Supabase belum terbaca. Periksa supabase-config.js.");
+    return;
+  }
+
+  const client=window.supabase.createClient(
+    window.LILAC_SUPABASE_URL,
+    window.LILAC_SUPABASE_KEY
+  );
+
+  async function loadOrders(){
+    rows.innerHTML="<tr><td colspan='6'>Memuat pesanan...</td></tr>";
+    try{
+      const {data,error}=await client.from("orders").select("*").order("created_at",{ascending:false});
+      if(error) throw error;
+      if(!data || !data.length){
+        rows.innerHTML="<tr><td colspan='6'>Belum ada pesanan.</td></tr>";
+        return;
+      }
+      rows.innerHTML=data.map(function(o){
+        const itemText=Array.isArray(o.items)?o.items.map(function(x){
+          const q=x.qty||x.quantity||1, p=x.price||0;
+          return esc(x.name||x.title||"Produk")+" x"+q+" = "+money(p*q);
+        }).join("<br>"):"";
+        const status=["Menunggu verifikasi","Dibayar","Diproses","Selesai","Dibatalkan"];
+        const opts=status.map(function(s){
+          return "<option value='"+esc(s)+"' "+(o.payment_status===s?"selected":"")+">"+esc(s)+"</option>";
+        }).join("");
+        return "<tr>"+
+          "<td><b>"+esc(o.id)+"</b></td>"+
+          "<td>"+esc(o.name)+"<br>"+esc(o.phone)+"</td>"+
+          "<td>"+itemText+"</td>"+
+          "<td><b>"+money(o.total)+"</b></td>"+
+          "<td>"+esc(o.payment_status)+"</td>"+
+          "<td><select data-id='"+esc(o.id)+"'>"+opts+"</select><button type='button' data-save='"+esc(o.id)+"'>Simpan</button></td>"+
+        "</tr>";
+      }).join("");
+
+      rows.querySelectorAll("[data-save]").forEach(function(btn){
+        btn.addEventListener("click",async function(){
+          const id=btn.getAttribute("data-save");
+          const sel=rows.querySelector("select[data-id='"+CSS.escape(id)+"']");
+          btn.disabled=true;
+          try{
+            const {error}=await client.from("orders").update({
+              payment_status:sel.value,
+              status_updated_at:new Date().toISOString()
+            }).eq("id",id);
+            if(error) throw error;
+            show(adminMsg,"Status "+id+" berhasil diubah menjadi "+sel.value+".");
+            await loadOrders();
+          }catch(e){show(adminMsg,"Gagal mengubah status: "+(e.message||String(e)));}
+          finally{btn.disabled=false;}
+        });
+      });
+    }catch(e){
+      rows.innerHTML="<tr><td colspan='6'>Gagal memuat pesanan.</td></tr>";
+      show(adminMsg,"Gagal mengambil pesanan: "+(e.message||String(e)));
+    }
+  }
+
+  async function login(){
+    loginMsg.style.display="none";
+    const email=document.getElementById("email").value.trim();
+    const password=document.getElementById("password").value;
+    if(!email || !password){
+      show(loginMsg,"Email dan password wajib diisi.");
+      return;
+    }
+    loginBtn.disabled=true;
+    loginBtn.textContent="Memproses...";
+    try{
+      const result=await client.auth.signInWithPassword({email:email,password:password});
+      if(result.error) throw result.error;
+      loginBox.classList.add("hidden");
+      panel.classList.remove("hidden");
+      logout.classList.remove("hidden");
+      await loadOrders();
+    }catch(e){
+      show(loginMsg,"Login gagal: "+(e.message||String(e)));
+    }finally{
+      loginBtn.disabled=false;
+      loginBtn.textContent="Login";
+    }
+  }
+
+  loginBtn.addEventListener("click",login);
+  document.getElementById("refreshBtn").addEventListener("click",loadOrders);
+  logout.addEventListener("click",async function(){
+    await client.auth.signOut();
+    location.reload();
+  });
+
+  client.auth.getSession().then(function(result){
+    if(result.data && result.data.session){
+      loginBox.classList.add("hidden");
+      panel.classList.remove("hidden");
+      logout.classList.remove("hidden");
+      loadOrders();
+    }
+  });
+});
+</script>
+</body>
+</html>
