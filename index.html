@@ -1,85 +1,89 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#d9a6c0">
-  <title>Lilacmart - Auto Order</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#d62f68">
+<title>Lilacmart Store — Official Marketplace</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">Lilacmart</div>
-    <button id="cartBtn" class="cart-btn">🛒 Keranjang <span id="cartCount">0</span></button>
-  </header>
-
-  <main>
-    <section class="hero">
-      <div>
-        <p class="eyebrow">WELCOME TO</p>
-        <h1>Lilacmart</h1>
-        <p>Belanja mudah, checkout cepat, pembayaran QRIS.</p>
-        <a href="#products" class="primary">Belanja Sekarang</a>
-      </div>
-    </section>
-
-    <section id="products" class="section">
-      <h2>Produk</h2>
-      <div id="productGrid" class="product-grid"></div>
-    </section>
-  </main>
-
-  <div id="cartModal" class="modal hidden">
-    <div class="modal-card">
-      <button class="close" data-close>×</button>
-      <h2>Keranjang</h2>
-      <div id="cartItems"></div>
-      <div class="total">Total: <strong id="cartTotal">Rp0</strong></div>
-      <button id="checkoutBtn" class="primary full">Checkout</button>
-    </div>
+<header class="header">
+  <div class="brand">
+    <div class="brand-avatar">👩🏻‍💻</div>
+    <div><b>Lilacmart <span>Store</span></b><small>✦ Official Marketplace</small></div>
   </div>
+  <nav>
+    <button class="nav-active" data-scroll="products">▦ Katalog</button>
+    <button data-scroll="reviews">★ Ulasan</button>
+    <button data-scroll="help">● Bantuan</button>
+  </nav>
+  <button class="cart-top" id="openCart">🛍 Keranjang <b id="cartCount">0</b></button>
+</header>
 
-  <div id="checkoutModal" class="modal hidden">
-    <div class="modal-card">
-      <button class="close" data-close>×</button>
-      <h2>Data Pesanan</h2>
-      <form id="orderForm">
-        <label>Nama
-          <input id="customerName" required>
-        </label>
-        <label>Nomor WhatsApp
-          <input id="customerPhone" type="tel" required>
-        </label>
-        <label>Alamat
-          <textarea id="customerAddress" required></textarea>
-        </label>
-        <button class="primary full" type="submit">Lanjut ke Pembayaran</button>
-      </form>
-    </div>
+<div class="searchbar">
+  <span>⌕</span><input id="search" placeholder="Cari aplikasi premium, streaming, AI, game...">
+</div>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="store-pill"><span>👩🏻‍💻</span><b>Lilacmart Store</b><small>● Official Marketplace</small></div>
+    <p class="hero-copy">✦ ▤▤ Lilacmart  ♡✧ &nbsp; laman terpercaya dengan aplikasi premium berkualitas ✧✧ menyajikan pelayanan bintang lima ✧ ♡ &nbsp; welcome to ethereal page! ♡</p>
+    <div class="badges"><span>☁ &nbsp; <b id="activeCount">25</b> PRODUK AKTIF</span><span>✓ &nbsp; 100% GARANSI LAYANAN</span><span>ϟ &nbsp; Fast Response CS</span></div>
   </div>
+</section>
 
-  <div id="paymentModal" class="modal hidden">
-    <div class="modal-card payment">
-      <button class="close" data-close>×</button>
-      <h2>Pembayaran QRIS</h2>
-      <p>Scan QRIS berikut menggunakan aplikasi pembayaran kamu.</p>
-      <img src="qris.jpg" class="qris" alt="QRIS Lilacmart">
-      <p class="total">Total: <strong id="paymentTotal">Rp0</strong></p>
-      <button id="confirmPaymentBtn" class="primary full">Saya Sudah Bayar</button>
-    </div>
-  </div>
+<div class="ticker"><span>✦ Disney+ Hotstar</span><span>✦ Spotify Premium</span><span>✦ Canva Pro Lifetime</span><span>✦ YouTube Premium</span><span>✦ CapCut Pro</span><span>✦ Vidio Platinum</span></div>
 
-  <div id="successModal" class="modal hidden">
-    <div class="modal-card center">
-      <div class="success-icon">✓</div>
-      <h2>Pesanan berhasil dibuat</h2>
-      <p id="orderMessage"></p>
-      <button class="primary full" data-close>OK</button>
-    </div>
-  </div>
+<main id="products" class="container">
+  <div class="section-title"><h2>▰ Kategori Produk</h2><span id="readyCount">(25 produk ready)</span></div>
+  <div class="categories" id="categories"></div>
+  <div class="grid" id="productGrid"></div>
+</main>
 
-  <script src="supabase-config.js"></script>
-  <script src="online-db.js"></script>
-  <script src="aplikasi.js"></script>
+<section id="reviews" class="reviews"><h2>★ Ulasan Pelanggan</h2><p>Pelayanan cepat, produk sesuai, dan proses order mudah.</p></section>
+<section id="help" class="help"><h2>● Bantuan</h2><p>Jika ada kendala, hubungi CS melalui WhatsApp setelah checkout.</p></section>
+
+<button class="floating-cart" id="openCart2">🛍 Keranjang <b id="cartCount2">0</b></button>
+
+<div class="modal hidden" id="cartModal"><div class="sheet">
+  <button class="x" data-close>×</button><h2>Keranjang</h2><div id="cartItems"></div>
+  <div class="grand">Total <b id="cartTotal">Rp0</b></div>
+  <button class="buy full" id="checkout">Lanjut Checkout →</button>
+</div></div>
+
+<div class="modal hidden" id="checkoutModal"><div class="sheet">
+  <button class="x" data-close>×</button><h2>Data Pemesan</h2>
+  <form id="checkoutForm">
+    <label>Nama<input id="name" required placeholder="Nama lengkap"></label>
+    <label>WhatsApp<input id="phone" required placeholder="08xxxxxxxxxx"></label>
+    <label>Catatan / alamat<input id="note" placeholder="Catatan pesanan"></label>
+    <button class="buy full">Lanjut ke QRIS →</button>
+  </form>
+</div></div>
+
+<div class="modal hidden" id="paymentModal"><div class="sheet pay">
+  <button class="x" data-close>×</button><h2>Pembayaran QRIS</h2>
+  <p>Scan QRIS sesuai total pesanan.</p><img src="qris.jpg" class="qris" alt="QRIS">
+  <div class="grand">Total <b id="payTotal">Rp0</b></div>
+  <button class="buy full" id="paid">Saya Sudah Bayar →</button>
+</div></div>
+
+<div class="modal hidden" id="successModal"><div class="sheet center">
+  <div class="check">✓</div><h2>Pesanan diterima!</h2><p id="orderResult"></p>
+  <button class="buy full" data-close>Selesai</button>
+</div></div>
+
+<div class="modal hidden" id="adminModal"><div class="sheet">
+  <button class="x" data-close>×</button><h2>Admin Lilacmart</h2>
+  <p class="muted">Admin berada di dalam website ini. Data produk disimpan di browser.</p>
+  <div id="adminProducts"></div>
+  <button class="buy full" id="resetProducts">Kembalikan produk awal</button>
+</div></div>
+
+<footer>© 2026 Lilacmart Store · Official Marketplace</footer>
+<script src="supabase-config.js"></script>
+<script src="online-db.js"></script>
+<script src="aplikasi.js"></script>
 </body>
 </html>
