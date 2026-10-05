@@ -1,87 +1,13 @@
-const initialProducts=[
-{id:1,name:"YouTube Premium",cat:"Langganan",price:12000,variants:3,icon:"▶",logo:"youtube"},
-{id:2,name:"Viu Premium",cat:"Streaming",price:10000,variants:6,icon:"viu",logo:"viu"},
-{id:3,name:"HboMax Premium",cat:"Streaming",price:20000,variants:2,icon:"HBO",logo:"hbo"},
-{id:4,name:"LokLok Premium",cat:"Streaming",price:26000,variants:3,icon:"🎬",logo:"loklok"},
-{id:5,name:"Netflix Premium",cat:"Streaming",price:28500,variants:3,icon:"N",logo:"netflix"},
-{id:6,name:"Disney+ Premium",cat:"Streaming",price:27000,variants:3,icon:"Disney+",logo:"disney"},
-{id:7,name:"Canva Premium",cat:"Editing",price:10000,variants:4,icon:"Canva",logo:"canva"},
-{id:8,name:"Meitu+ Premium",cat:"Editing",price:20000,variants:3,icon:"M",logo:"meitu"},
-{id:9,name:"Wink+ Premium",cat:"Editing",price:20000,variants:3,icon:"W",logo:"wink"},
-{id:10,name:"Picsart Premium",cat:"Editing",price:15000,variants:4,icon:"P",logo:"picsart"},
-{id:11,name:"iQIYI Premium",cat:"Streaming",price:23000,variants:3,icon:"iQ",logo:"iqiyi"},
-{id:12,name:"Spotify Premium",cat:"Music",price:15000,variants:3,icon:"♫",logo:"spotify"},
-{id:13,name:"CapCut Pro",cat:"Editing",price:18000,variants:3,icon:"✂",logo:"capcut"},
-{id:14,name:"Vidio Platinum",cat:"Streaming",price:22000,variants:3,icon:"V",logo:"vidio"},
-{id:15,name:"ChatGPT Plus",cat:"Other",price:25000,variants:2,icon:"AI",logo:"ai"},
-{id:16,name:"YouTube Music",cat:"Music",price:17000,variants:2,icon:"♫",logo:"youtube"},
-{id:17,name:"Prime Video",cat:"Streaming",price:23000,variants:3,icon:"▶",logo:"prime"},
-{id:18,name:"Alight Motion",cat:"Editing",price:18000,variants:3,icon:"A",logo:"alight"},
-{id:19,name:"Filmora",cat:"Editing",price:20000,variants:3,icon:"F",logo:"filmora"},
-{id:20,name:"Disney+ Hotstar",cat:"Streaming",price:27000,variants:3,icon:"Disney+",logo:"disney"},
-{id:21,name:"Claude Pro",cat:"Other",price:30000,variants:2,icon:"AI",logo:"ai"},
-{id:22,name:"Gemini Advanced",cat:"Other",price:28000,variants:2,icon:"✦",logo:"ai"},
-{id:23,name:"Tidal Premium",cat:"Music",price:18000,variants:3,icon:"♫",logo:"music"},
-{id:24,name:"Mobile Legends",cat:"game",price:20000,variants:4,icon:"🎮",logo:"game"},
-{id:25,name:"Canva Pro Lifetime",cat:"Editing",price:30000,variants:2,icon:"Canva",logo:"canva"}
-];
-
-let products=JSON.parse(localStorage.getItem("lm_products_v2")||"null")||initialProducts;
-let cart=JSON.parse(localStorage.getItem("lm_cart_v2")||"[]"),category="Semua",pending=null;
-const money=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n);
-const save=()=>{localStorage.setItem("lm_products_v2",JSON.stringify(products));localStorage.setItem("lm_cart_v2",JSON.stringify(cart))};
-
-function renderCats(){
- const cats=["Semua","Langganan","Streaming","Editing","Music","Other","game"];
- categories.innerHTML=cats.map(c=>`<button class="${c===category?"active":""}" onclick="setCat('${c}')">✦ ${c}</button>`).join("");
-}
-function renderProducts(){
- const q=(search.value||"").toLowerCase();
- const list=products.filter(p=>(category==="Semua"||p.cat===category)&&p.name.toLowerCase().includes(q));
- productGrid.innerHTML=list.map(p=>`
- <article class="card">
-   <span class="tag">▣ ${p.cat}</span><button class="heart">♥</button>
-   <div class="logo"><div class="logo-icon ${p.logo}">${p.icon}</div></div>
-   <h3>${p.name}</h3><div class="price">Mulai ${money(p.price)}</div>
-   <div class="available">Tersedia (${p.variants} varian)</div>
-   <button class="primary" onclick="add(${p.id})">Beli Sekarang　✦</button>
- </article>`).join("");
- activeCount.textContent=products.length;readyCount.textContent=`(${products.length} produk ready)`;
-}
-function setCat(c){category=c;renderCats();renderProducts()}
-function add(id){const x=cart.find(i=>i.id===id);x?x.qty++:cart.push({id,qty:1});save();renderCart();open("cartModal")}
-function renderCart(){
- const n=cart.reduce((s,i)=>s+i.qty,0);cartCount.textContent=n;cartCount2.textContent=n;
- cartItems.innerHTML=cart.length?cart.map(i=>{const p=products.find(x=>x.id===i.id);return `<div class="cartrow"><span>${p.name}<br><b>${money(p.price*i.qty)}</b></span><span class="qty"><button onclick="qty(${p.id},-1)">−</button> ${i.qty} <button onclick="qty(${p.id},1)">+</button></span></div>`}).join(""):"<p>Keranjang masih kosong.</p>";
- cartTotal.textContent=money(cart.reduce((s,i)=>s+products.find(p=>p.id===i.id).price*i.qty,0));
-}
-function qty(id,d){const x=cart.find(i=>i.id===id);x.qty+=d;if(x.qty<1)cart=cart.filter(i=>i.id!==id);save();renderCart()}
-function open(id){document.getElementById(id).classList.remove("hidden")}
-function closeAll(){document.querySelectorAll(".modal").forEach(x=>x.classList.add("hidden"))}
-document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeAll);
-openCart.onclick=openCart2.onclick=()=>{renderCart();open("cartModal")};
-checkout.onclick=()=>{if(!cart.length)return alert("Keranjang masih kosong.");closeAll();open("checkoutModal")};
-search.oninput=renderProducts;
-document.querySelectorAll("[data-scroll]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.scroll).scrollIntoView());
-checkoutForm.onsubmit=e=>{
- e.preventDefault();
- const total=cart.reduce((s,i)=>s+products.find(p=>p.id===i.id).price*i.qty,0);
- pending={id:"LM"+Date.now().toString().slice(-8),name:name.value,phone:phone.value,note:note.value,total};
- payTotal.textContent=money(total);closeAll();open("paymentModal");
-};
-paid.onclick=async()=>{
- await saveOrder(pending);
- orderResult.textContent=`Nomor pesanan ${pending.id}. Simpan nomor ini untuk konfirmasi pembayaran melalui WhatsApp.`;
- cart=[];save();renderCart();closeAll();open("successModal");
-};
-async function saveOrder(o){
- const orders=JSON.parse(localStorage.getItem("lm_orders_v2")||"[]");
- orders.push({...o,time:new Date().toISOString()});localStorage.setItem("lm_orders_v2",JSON.stringify(orders));
- if(window.LilacDB)await window.LilacDB.save(o);
-}
-function renderAdmin(){adminProducts.innerHTML=products.map(p=>`<div class="adminrow"><b>${p.name}</b> — ${money(p.price)} <button onclick="delProduct(${p.id})">hapus</button></div>`).join("")}
-function delProduct(id){products=products.filter(p=>p.id!==id);save();renderProducts();renderAdmin()}
-resetProducts.onclick=()=>{products=initialProducts;save();renderProducts();renderAdmin()}
-document.addEventListener("keydown",e=>{if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==="a"){open("adminModal");renderAdmin()}});
-renderCats();renderProducts();renderCart();
-if(new URLSearchParams(location.search).get("admin")==="1"){open("adminModal");renderAdmin()}
+const products=[
+["YouTube Premium","Langganan","Rp 12.000","3","▶️"],["Viu Premium","Streaming","Rp 10.000","6","◉"],["HboMax Premium","Streaming","Rp 20.000","2","HBO"],["LokLok Premium","Streaming","Rp 26.000","3","🎬"],["Netflix Premium","Streaming","Rp 28.500","3","N"],["Disney+ Premium","Streaming","Rp 27.000","3","✦"],["Canva Premium","Editing","Rp 10.000","4","Canva"],["Meitu+ Premium","Editing","Rp 20.000","3","M"],["Wink+ Premium","Editing","Rp 20.000","3","✦"],["Picsart Premium","Editing","Rp 15.000","4","P"],["iQIYI Premium","Streaming","Rp 23.000","3","iQ"],["Spotify Premium","Music","Rp 15.000","3","♫"],["CapCut Pro","Editing","Rp 18.000","3","✂"],["Vidio Platinum","Streaming","Rp 22.000","3","V"],["ChatGPT Plus","Other","Rp 20.000","2","AI"],["Disney+ Hotstar","Streaming","Rp 25.000","3","✦"],["YouTube Music","Music","Rp 18.000","3","♫"],["Grammarly Premium","Other","Rp 20.000","2","G"],["Prime Video","Streaming","Rp 18.000","3","▶"],["Apple Music","Music","Rp 20.000","3","♫"],["Alight Motion","Editing","Rp 15.000","3","A"],["Picsart Gold","Editing","Rp 18.000","3","P"],["Gemini AI","Other","Rp 25.000","2","✦"],["Canva Pro Lifetime","Editing","Rp 30.000","1","Canva"],["Roblox Premium","game","Rp 20.000","3","R"]];
+let cart=JSON.parse(localStorage.getItem("lilac_cart")||"[]");
+const productsEl=document.getElementById("products"), search=document.getElementById("search");
+function render(cat="Semua",q=""){productsEl.innerHTML="";products.filter(p=>(cat==="Semua"||p[1]===cat)&&p[0].toLowerCase().includes(q.toLowerCase())).forEach((p,i)=>{const c=document.createElement("article");c.className="card";c.innerHTML=`<span class="tag">▣ ${p[1]}</span><span class="heart">♥</span><div class="thumb"><div class="iconbox ${i===0?"yt":""}">${p[4]}</div></div><h3>${p[0]}</h3><p class="price">Mulai ${p[2]}</p><div class="variant">Tersedia (${p[3]} varian)</div><button class="buy" data-i="${i}">Beli Sekarang　✦</button>`;productsEl.appendChild(c)})}
+function updateCart(){document.getElementById("cartCount").textContent=cart.length;document.getElementById("cartCountTop").textContent=cart.length;localStorage.setItem("lilac_cart",JSON.stringify(cart))}
+document.querySelectorAll(".cat").forEach(b=>b.onclick=()=>{document.querySelectorAll(".cat").forEach(x=>x.classList.remove("active"));b.classList.add("active");render(b.dataset.cat,search.value)});
+search.oninput=()=>{const a=document.querySelector(".cat.active");render(a?.dataset.cat||"Semua",search.value)};
+productsEl.onclick=e=>{const b=e.target.closest(".buy");if(!b)return;cart.push(products[+b.dataset.i]);updateCart();openCart()};
+function openCart(){document.getElementById("modalContent").innerHTML=`<h2>🛍️ Keranjang (${cart.length})</h2>${cart.length?cart.map((p,i)=>`<p><b>${i+1}. ${p[0]}</b> — ${p[2]}</p>`).join(""):`<p>Keranjang masih kosong.</p>`}<button class="action" onclick="checkout()">Lanjut Checkout</button>`;document.getElementById("modal").classList.add("show")}
+function checkout(){const text=cart.map(p=>`- ${p[0]} (${p[2]})`).join("%0A");const msg=`Halo Lilacmart, saya ingin order:%0A${text}%0A%0ATotal item: ${cart.length}`;window.open("https://wa.me/628xxxxxxxxxx?text="+msg,"_blank")}
+document.getElementById("cartFloat").onclick=openCart;document.getElementById("cartTop").onclick=openCart;document.getElementById("close").onclick=()=>document.getElementById("modal").classList.remove("show");document.getElementById("modal").onclick=e=>{if(e.target.id==="modal")e.currentTarget.classList.remove("show")};
+render();updateCart();

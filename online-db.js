@@ -1,8 +1,1 @@
-// Integrasi database opsional. Untuk keamanan, gunakan anon/public key saja.
-// Website tetap berfungsi dengan localStorage jika Supabase belum dikonfigurasi.
-window.LilacDB={save:async(order)=>{
- const cfg=window.SUPABASE_CONFIG||{};
- if(!cfg.url||!cfg.anonKey)return true;
- // Endpoint/database dapat diaktifkan setelah tabel "orders" dibuat.
- return true;
-}};
+/* Data lokal agar GitHub Pages tetap berjalan tanpa backend. */ window.LilacDB={saveOrder(order){localStorage.setItem("lilac_last_order",JSON.stringify(order))},getOrder(){try{return JSON.parse(localStorage.getItem("lilac_last_order"))}catch(e){return null}}};
