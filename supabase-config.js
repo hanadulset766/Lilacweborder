@@ -1,3 +1,6 @@
-
-window.LILAC_SUPABASE_URL = "https://fjricnhpeoalkshewyan.supabase.co";
-window.LILAC_SUPABASE_KEY = "sb_publishable_VXmRfsRfHOI8ot77ycSsPA_UQHReTfd";
+// Isi dengan kredensial Supabase milik kamu jika ingin menyimpan pesanan online.
+// Jangan masukkan service_role key di website publik.
+const SUPABASE_CONFIG = {
+  url: "",
+  anonKey: ""
+};

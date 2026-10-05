@@ -1,121 +1,85 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#ff5b8d">
-<title>Lilacmart Store — Auto Order QRIS</title>
-<link rel="stylesheet" href="style.css?v=12">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#d9a6c0">
+  <title>Lilacmart - Auto Order</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">
-    <div class="brand-avatar">🌸</div>
-    <div><div class="brand-name">Lilacmart <span>Store</span></div><div class="brand-badge">✦ Official Marketplace</div></div>
+  <header class="topbar">
+    <div class="brand">Lilacmart</div>
+    <button id="cartBtn" class="cart-btn">🛒 Keranjang <span id="cartCount">0</span></button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">WELCOME TO</p>
+        <h1>Lilacmart</h1>
+        <p>Belanja mudah, checkout cepat, pembayaran QRIS.</p>
+        <a href="#products" class="primary">Belanja Sekarang</a>
+      </div>
+    </section>
+
+    <section id="products" class="section">
+      <h2>Produk</h2>
+      <div id="productGrid" class="product-grid"></div>
+    </section>
+  </main>
+
+  <div id="cartModal" class="modal hidden">
+    <div class="modal-card">
+      <button class="close" data-close>×</button>
+      <h2>Keranjang</h2>
+      <div id="cartItems"></div>
+      <div class="total">Total: <strong id="cartTotal">Rp0</strong></div>
+      <button id="checkoutBtn" class="primary full">Checkout</button>
+    </div>
   </div>
-  <button class="icon-btn" type="button" onclick="openModal('helpModal')">?</button>
-</header>
 
-<main>
-<section class="search-wrap" aria-label="Pencarian produk">
-  <div class="search-box"><span class="search-icon">⌕</span><input id="search" type="search" placeholder="Cari aplikasi premium, streaming, AI, game…" autocomplete="off"><span>🔎</span></div>
-</section>
-
-<section class="hero">
-  <i class="deco d1">✿</i><i class="deco d2">✦</i><i class="deco d3">♡</i>
-  <div class="hero-pill"><div class="hero-avatar">🌸</div><div><strong>Lilacmart Store</strong><small>✦ Official Marketplace</small></div></div>
-  <p class="eyebrow">PREMIUM DIGITAL STORE</p>
-  <h1>Belanja Produk Digital<br><em>Jadi Lebih Mudah ✨</em></h1>
-  <p class="hero-text">Temukan aplikasi premium, streaming, AI, game, dan layanan digital dengan proses cepat, aman, dan praktis.</p>
-  <div class="hero-actions"><a class="hero-btn primary" href="#katalog">Lihat Produk</a><button class="hero-btn light" type="button" onclick="openModal('helpModal')">Bantuan</button></div>
-  <div class="stats"><div><strong>25</strong><span>PRODUK AKTIF</span></div><div><strong>100%</strong><span>GARANSI LAYANAN</span></div><div><strong>FAST</strong><span>RESPONSE CS</span></div></div>
-</section>
-
-<section class="ticker"><div class="ticker-track"><span>Spotify Premium</span><b>✦</b><span>Disney+ Hotstar</span><b>✦</b><span>Canva Pro</span><b>✦</b><span>ChatGPT Plus</span><b>✦</b><span>Netflix</span><b>✦</b></div></section>
-
-<section class="section" id="katalog">
-  <div class="section-heading"><div><p class="section-kicker">EXPLORE</p><h2>📦 Kategori Produk</h2></div><span id="readyCount" class="count-label">(0 produk ready)</span></div>
-  <div class="chips" id="categoryChips">
-    <button class="chip active" type="button" onclick="setCategory('Semua',this)">✦ Semua</button>
-    <button class="chip" type="button" onclick="setCategory('Langganan',this)">🌸 Langganan</button>
-    <button class="chip" type="button" onclick="setCategory('Streaming',this)">🎬 Streaming</button>
-    <button class="chip" type="button" onclick="setCategory('AI',this)">🤖 AI</button>
-    <button class="chip" type="button" onclick="setCategory('Game',this)">🎮 Game</button>
+  <div id="checkoutModal" class="modal hidden">
+    <div class="modal-card">
+      <button class="close" data-close>×</button>
+      <h2>Data Pesanan</h2>
+      <form id="orderForm">
+        <label>Nama
+          <input id="customerName" required>
+        </label>
+        <label>Nomor WhatsApp
+          <input id="customerPhone" type="tel" required>
+        </label>
+        <label>Alamat
+          <textarea id="customerAddress" required></textarea>
+        </label>
+        <button class="primary full" type="submit">Lanjut ke Pembayaran</button>
+      </form>
+    </div>
   </div>
-</section>
 
-<section class="products" id="products">
-  <div class="loading-card"><div class="loading-icon">🌸</div><strong>Memuat produk…</strong><span>Menghubungkan ke katalog</span></div>
-</section>
+  <div id="paymentModal" class="modal hidden">
+    <div class="modal-card payment">
+      <button class="close" data-close>×</button>
+      <h2>Pembayaran QRIS</h2>
+      <p>Scan QRIS berikut menggunakan aplikasi pembayaran kamu.</p>
+      <img src="qris.jpg" class="qris" alt="QRIS Lilacmart">
+      <p class="total">Total: <strong id="paymentTotal">Rp0</strong></p>
+      <button id="confirmPaymentBtn" class="primary full">Saya Sudah Bayar</button>
+    </div>
+  </div>
 
-<section class="trust">
-  <div class="trust-card"><span>🔒</span><strong>Aman & Praktis</strong><small>Pesanan tersimpan otomatis.</small></div>
-  <div class="trust-card"><span>⚡</span><strong>Proses Cepat</strong><small>Order digital tanpa ribet.</small></div>
-  <div class="trust-card"><span>💗</span><strong>Customer Support</strong><small>Siap membantu pesananmu.</small></div>
-</section>
-</main>
+  <div id="successModal" class="modal hidden">
+    <div class="modal-card center">
+      <div class="success-icon">✓</div>
+      <h2>Pesanan berhasil dibuat</h2>
+      <p id="orderMessage"></p>
+      <button class="primary full" data-close>OK</button>
+    </div>
+  </div>
 
-<nav class="bottom-nav">
-  <a class="nav-item active" href="#katalog"><span>⌂</span><small>Katalog</small></a>
-  <button class="nav-item" type="button" onclick="openModal('reviewModal')"><span>★</span><small>Ulasan</small></button>
-  <button class="nav-item" type="button" onclick="openModal('helpModal')"><span>?</span><small>Bantuan</small></button>
-  <button class="nav-item cart-nav" type="button" onclick="openCart()"><span>🛒</span><b id="bottomCount">0</b><small>Keranjang</small></button>
-</nav>
-
-<div class="modal" id="cartModal"><div class="modal-backdrop" onclick="closeModal('cartModal')"></div><div class="modal-card"><button class="modal-close" onclick="closeModal('cartModal')">×</button><p class="section-kicker">ORDER</p><h2>🛒 Keranjang</h2><div id="cartItems" class="cart-items"></div><div class="total-row"><span>Total</span><strong id="cartTotal">Rp0</strong></div><button class="wide-btn" type="button" onclick="openCheckout()">Lanjut Checkout</button></div></div>
-
-<div class="modal" id="checkoutModal"><div class="modal-backdrop" onclick="closeModal('checkoutModal')"></div><div class="modal-card"><button class="modal-close" onclick="closeModal('checkoutModal')">×</button><p class="section-kicker">DATA PELANGGAN</p><h2>Checkout Pesanan</h2><label>Nama<input id="customerName" class="form-input" type="text" placeholder="Nama kamu"></label><label>WhatsApp<input id="customerPhone" class="form-input" type="tel" placeholder="08xxxxxxxxxx"></label><label>Catatan<textarea id="customerNote" class="form-input" rows="3" placeholder="Catatan tambahan (opsional)"></textarea></label><button class="wide-btn" type="button" onclick="createOrder()">Buat Pesanan & Bayar QRIS</button></div></div>
-
-<div class="modal" id="qrisModal"><div class="modal-backdrop" onclick="closeModal('qrisModal')"></div><div class="modal-card qris-card"><button class="modal-close" onclick="closeModal('qrisModal')">×</button><p class="section-kicker">PEMBAYARAN</p><h2>Scan QRIS 💳</h2><p class="muted">Scan QRIS lalu kirim konfirmasi pesanan melalui WhatsApp.</p><img class="qris-image" src="qris.jpg" alt="QRIS pembayaran Lilacmart"><div class="payment-note">Pesanan: <strong id="qrisOrderId">-</strong></div><button class="wide-btn" type="button" onclick="sendWhatsApp()">Konfirmasi via WhatsApp</button></div></div>
-
-<div class="modal" id="helpModal"><div class="modal-backdrop" onclick="closeModal('helpModal')"></div><div class="modal-card"><button class="modal-close" onclick="closeModal('helpModal')">×</button><p class="section-kicker">CUSTOMER SUPPORT</p><h2>💬 Bantuan</h2><p class="muted">Pilih produk → tambahkan ke keranjang → isi data → bayar QRIS → konfirmasi pesanan.</p><button class="wide-btn" type="button" onclick="sendWhatsApp()">Chat WhatsApp</button></div></div>
-
-<div class="modal" id="reviewModal"><div class="modal-backdrop" onclick="closeModal('reviewModal')"></div><div class="modal-card"><button class="modal-close" onclick="closeModal('reviewModal')">×</button><p class="section-kicker">CUSTOMER REVIEW</p><h2>⭐ Ulasan</h2><div class="review-box">“Proses cepat dan mudah. Terima kasih Lilacmart!”</div><div class="review-box">“Order produk digital jadi praktis.”</div><p class="muted">Ulasan ini adalah contoh tampilan.</p></div></div>
-
-<footer><strong>Lilacmart Store</strong><span>Marketplace digital terpercaya • Auto Order QRIS</span></footer>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-config.js"></script>
-<script src="online-db.js"></script>
-<script src="aplikasi.js?v=12"></script>
-
-<script>
-/* Penghubung modal dan QRIS; tidak mengubah file aplikasi.js. */
-function closeModal(id){document.getElementById(id)?.classList.remove("show")}
-function openQRIS(){
-  document.getElementById("qrisModal")?.classList.add("show");
-  if(window.lastOrder?.id) document.getElementById("qrisOrderId").textContent=window.lastOrder.id;
-}
-document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".modal.show").forEach(x=>x.classList.remove("show"))});
-
-/*
-  Fallback katalog:
-  Jika aplikasi.js gagal merender karena cache/versi lama, halaman tetap
-  mengambil produk langsung dari Supabase menggunakan konfigurasi yang sama.
-*/
-(function(){
-  let fallbackDone=false;
-  async function fallbackProducts(){
-    if(fallbackDone || !window.supabase || !window.LILAC_SUPABASE_URL || !window.LILAC_SUPABASE_KEY) return;
-    const box=document.getElementById("products");
-    if(!box || !box.textContent.includes("Memuat produk")) return;
-    try{
-      const client=window.supabase.createClient(window.LILAC_SUPABASE_URL,window.LILAC_SUPABASE_KEY);
-      const {data,error}=await client.from("products").select("*").order("created_at",{ascending:false});
-      if(error) throw error;
-      fallbackDone=true;
-      const list=data||[];
-      const money=new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0});
-      const esc=s=>String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
-      box.innerHTML=list.map(p=>`<article class="product"><div class="pic">${p.icon||"🛍️"}</div><h3>${esc(p.name)}</h3><p>${esc(p.description||"Produk digital siap digunakan.")}</p><b>${money.format(p.price||0)}</b><small>• ${esc(p.status||"Ready")}</small><button type="button" onclick="addCart('${p.id}')">+ Tambah ke Keranjang</button></article>`).join("")||'<div class="empty-card">Belum ada produk.</div>';
-      const r=document.getElementById("readyCount"); if(r) r.textContent=`(${list.length} produk ready)`;
-    }catch(e){
-      console.error("Fallback katalog:",e);
-      box.innerHTML='<div class="empty-card">Produk belum dapat dimuat. Coba refresh halaman.</div>';
-    }
-  }
-  window.addEventListener("load",()=>setTimeout(fallbackProducts,1200));
-})();
-</script>
+  <script src="supabase-config.js"></script>
+  <script src="online-db.js"></script>
+  <script src="aplikasi.js"></script>
 </body>
 </html>

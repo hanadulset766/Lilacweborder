@@ -1,18 +1,85 @@
-let products=[],cart=[],category="Semua",lastOrder=null;
-const rupiah=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
-const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-function db(){return window.supabase.createClient(window.LILAC_SUPABASE_URL,window.LILAC_SUPABASE_KEY)}
-async function loadProducts(){try{let{data,error}=await db().from("products").select("*").order("created_at",{ascending:false});if(error)throw error;products=(data||[]).filter(p=>String(p.status||"Ready").toLowerCase()=="ready");buildCategories();renderProducts()}catch(e){console.error(e);document.getElementById("products").innerHTML="<div class=empty>❌ Gagal memuat produk: "+esc(e.message)+"</div>";document.getElementById("readyCount").textContent="(gagal memuat)"}}
-function buildCategories(){let c=["Semua",...new Set(products.map(p=>p.category||"Lainnya"))];document.getElementById("categories").innerHTML=c.map(x=>`<button class="chip ${x==category?"active":""}" onclick="setCategory('${esc(x).replace(/'/g,"\\'")}')">${esc(x)}</button>`).join("")}
-function setCategory(x){category=x;buildCategories();renderProducts()}
-function renderProducts(){let q=(document.getElementById("search").value||"").toLowerCase(),a=products.filter(p=>(category=="Semua"||p.category==category)&&(`${p.name} ${p.description||""}`.toLowerCase().includes(q)));document.getElementById("readyCount").textContent=`(${products.length} produk ready)`;document.getElementById("products").innerHTML=a.length?a.map(p=>`<article class=product><div class=pic>${p.image_url?`<img src="${esc(p.image_url)}">`:esc(p.icon||"🛍️")}</div><h3>${esc(p.name)}</h3><div class=desc>${esc(p.description||"Produk digital siap digunakan.")}</div><div class=price>${rupiah(p.price)}</div><div class=status>● ${esc(p.status||"Ready")}</div><button class=add onclick="addCart('${p.id}')">+ Tambah</button></article>`).join(""):"<div class=empty>Belum ada produk.</div>"}
-function addCart(id){let p=products.find(x=>String(x.id)==String(id));if(!p)return;let x=cart.find(x=>x.id==id);x?x.qty++:cart.push({id:p.id,name:p.name,price:Number(p.price)||0,qty:1});save();alert("Produk ditambahkan")}
-function save(){localStorage.setItem("lilac_cart",JSON.stringify(cart));document.getElementById("cartCount").textContent=cart.reduce((a,x)=>a+x.qty,0)}
-function total(){return cart.reduce((a,x)=>a+x.price*x.qty,0)}
-function openCart(){document.getElementById("cartItems").innerHTML=cart.length?cart.map((x,i)=>`<div class=row><span>${esc(x.name)} × ${x.qty}</span><span>${rupiah(x.price*x.qty)} <button onclick="del(${i})">×</button></span></div>`).join(""):"Keranjang kosong";document.getElementById("cartTotal").textContent=rupiah(total());openModal("cartModal")}
-function del(i){cart.splice(i,1);save();openCart()}
-function openCheckout(){if(!cart.length)return alert("Keranjang masih kosong");closeModal("cartModal");document.getElementById("checkoutTotal").textContent=rupiah(total());openModal("checkoutModal")}
-async function createOrder(){let name=customerName.value.trim(),phone=customerPhone.value.trim();if(!name||!phone)return alert("Nama dan WhatsApp wajib diisi");let o={id:"LM"+Date.now().toString().slice(-10),name,phone,note:customerNote.value.trim(),total:total(),items:cart,paymentStatus:"Menunggu pembayaran"};let{error}=await db().from("orders").insert({id:o.id,name:o.name,phone:o.phone,note:o.note,total:o.total,items:o.items,payment_status:o.paymentStatus});if(error)return alert("Order gagal: "+error.message);lastOrder=o;closeModal("checkoutModal");invoiceNo.textContent="Invoice: "+o.id;qrisTotal.textContent=rupiah(o.total);openModal("qrisModal")}
-function sendWhatsApp(){if(!lastOrder)return;window.open("https://wa.me/?text="+encodeURIComponent("Halo Lilacmart, saya sudah membayar. Invoice: "+lastOrder.id+" Total: "+rupiah(lastOrder.total)),"_blank")}
-function openModal(x){document.getElementById(x).classList.add("show")}function closeModal(x){document.getElementById(x).classList.remove("show")}
-try{cart=JSON.parse(localStorage.getItem("lilac_cart")||"[]")}catch{}save();loadProducts();
+const products = [
+  {id:1,name:"Produk Lilac 1",price:15000,emoji:"🎀"},
+  {id:2,name:"Produk Lilac 2",price:25000,emoji:"🛍️"},
+  {id:3,name:"Produk Lilac 3",price:35000,emoji:"💜"},
+  {id:4,name:"Produk Lilac 4",price:50000,emoji:"🎁"}
+];
+
+let cart = JSON.parse(localStorage.getItem("lilacmart_cart") || "[]");
+let currentOrder = null;
+
+const rupiah = n => new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n);
+
+function renderProducts(){
+  const grid=document.getElementById("productGrid");
+  grid.innerHTML=products.map(p=>`
+    <article class="product">
+      <div class="emoji">${p.emoji}</div>
+      <h3>${p.name}</h3>
+      <div class="price">${rupiah(p.price)}</div>
+      <button class="primary" onclick="addToCart(${p.id})">Tambah</button>
+    </article>`).join("");
+}
+function addToCart(id){
+  const item=cart.find(x=>x.id===id);
+  if(item)item.qty++;
+  else cart.push({id,qty:1});
+  saveCart(); renderCart(); updateCount();
+}
+function saveCart(){localStorage.setItem("lilacmart_cart",JSON.stringify(cart))}
+function updateCount(){document.getElementById("cartCount").textContent=cart.reduce((s,x)=>s+x.qty,0)}
+function total(){
+  return cart.reduce((s,x)=>{const p=products.find(p=>p.id===x.id);return s+p.price*x.qty},0);
+}
+function renderCart(){
+  const box=document.getElementById("cartItems");
+  if(!cart.length){box.innerHTML="<p>Keranjang masih kosong.</p>";}
+  else box.innerHTML=cart.map(x=>{
+    const p=products.find(p=>p.id===x.id);
+    return `<div class="cart-row"><span>${p.name}<br>${rupiah(p.price)} × ${x.qty}</span>
+      <span class="qty"><button onclick="changeQty(${p.id},-1)">−</button>
+      <button onclick="changeQty(${p.id},1)">+</button></span></div>`;
+  }).join("");
+  document.getElementById("cartTotal").textContent=rupiah(total());
+}
+function changeQty(id,d){
+  const x=cart.find(x=>x.id===id); if(!x)return;
+  x.qty+=d;if(x.qty<=0)cart=cart.filter(x=>x.id!==id);
+  saveCart();renderCart();updateCount();
+}
+function openModal(id){document.getElementById(id).classList.remove("hidden")}
+function closeModals(){document.querySelectorAll(".modal").forEach(x=>x.classList.add("hidden"))}
+
+document.getElementById("cartBtn").onclick=()=>{renderCart();openModal("cartModal")};
+document.getElementById("checkoutBtn").onclick=()=>{
+  if(!cart.length)return alert("Keranjang masih kosong.");
+  closeModals();openModal("checkoutModal");
+};
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeModals);
+
+document.getElementById("orderForm").onsubmit=e=>{
+  e.preventDefault();
+  currentOrder={
+    id:"LM-"+Date.now(),
+    name:document.getElementById("customerName").value.trim(),
+    phone:document.getElementById("customerPhone").value.trim(),
+    address:document.getElementById("customerAddress").value.trim(),
+    items:cart.map(x=>({...x})),
+    total:total(),
+    createdAt:new Date().toISOString(),
+    status:"Menunggu pembayaran"
+  };
+  document.getElementById("paymentTotal").textContent=rupiah(currentOrder.total);
+  closeModals();openModal("paymentModal");
+};
+
+document.getElementById("confirmPaymentBtn").onclick=async()=>{
+  if(!currentOrder)return;
+  currentOrder.status="Pembayaran dikonfirmasi oleh pelanggan";
+  await saveOrder(currentOrder);
+  document.getElementById("orderMessage").textContent=
+    `Nomor pesanan: ${currentOrder.id}. Simpan nomor ini untuk pengecekan pesanan.`;
+  cart=[];saveCart();updateCount();closeModals();openModal("successModal");
+};
+
+renderProducts();renderCart();updateCount();
