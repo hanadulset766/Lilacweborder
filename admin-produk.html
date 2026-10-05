@@ -221,7 +221,7 @@ async function loadProducts(){
 
   window.productCache=data;
 }
-}
+
 
 function editProductById(id){
  const p=(window.productCache||[]).find(x=>String(x.id)===String(id)); if(!p)return;
