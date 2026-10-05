@@ -26,7 +26,7 @@ const fallbackProducts = [
   ["Roblox Premium","Game","Rp 20.000","3","R"]
 ];
 
-let products = [...fallbackProducts];
+let products = [];
 let visibleProducts = [];
 
 let cart = JSON.parse(localStorage.getItem("lilac_cart") || "[]");
