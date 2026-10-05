@@ -122,7 +122,7 @@ function render(cat = "Semua", q = "") {
     const statusMatch =
       String(p.status || "").toLowerCase() !== "habis";
 const activeMatch = p.active !== false;
-    return categoryMatch && searchMatch && statusMatch;
+    return categoryMatch && searchMatch && statusMatch && activeMatch;
   });
 
   visibleProducts.forEach((p, i) => {
