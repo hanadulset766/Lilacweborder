@@ -110,16 +110,64 @@ async function logoutAdmin(){
 }
 
 async function loadProducts(){
- const box=document.getElementById("products"); box.innerHTML="Memuat produk...";
- const {data,error}=await db.from("products").select("*").order("created_at",{ascending:false});
- if(error){box.innerHTML="<p>Gagal memuat produk: "+escapeHtml(error.message)+"</p>";return;}
- if(!data||!data.length){box.innerHTML="<p>Belum ada produk. Tambahkan produk di atas.</p>";return;}
- box.innerHTML=data.map(p=>{
-  const img=p.image_url||""; const visual=img?`<img src="${escapeHtml(img)}" onerror="this.outerHTML='<div class=emoji>${escapeHtml(p.icon||"🛍️")}</div>'">`:`<div class="emoji">${escapeHtml(p.icon||"🛍️")}</div>`;
-  const status=p.status||"Ready";
-  return `<div class="product">${visual}<div class="product-info"><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(p.category||"Lainnya")} • Rp ${formatRupiah(p.price)} • Stok: ${Number(p.stock||0)}</small><span class="badge ${status==="Ready"?"ready":"habis"}">${escapeHtml(status)}</span></div><div class="actions"><button class="secondary" onclick="editProductById('${p.id}')">✏️</button><button class="danger" onclick="deleteProduct('${p.id}')">🗑️</button></div></div>`;
- }).join("");
- window.productCache=data;
+  const box=document.getElementById("products");
+  box.innerHTML="Memuat produk...";
+
+  const {data,error}=await db
+    .from("products")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    box.innerHTML="<p>Gagal memuat produk: "+escapeHtml(error.message)+"</p>";
+    return;
+  }
+
+  if(!data||!data.length){
+    box.innerHTML="<p>Belum ada produk. Tambahkan produk di atas.</p>";
+    return;
+  }
+
+  box.innerHTML=data.map(p=>{
+    const img=p.image_url||"";
+    const visual=img
+      ? `<img src="${escapeHtml(img)}" onerror="this.outerHTML='<div class=&quot;emoji&quot;>${escapeHtml(p.icon||"📦")}</div>'">`
+      : `<div class="emoji">${escapeHtml(p.icon||"📦")}</div>`;
+
+    const status=p.status||"Ready";
+    const active=p.active!==false;
+
+    return `
+      <div class="product">
+        ${visual}
+        <div class="product-info">
+          <strong>${escapeHtml(p.name||"Tanpa nama")}</strong>
+          <small>${escapeHtml(p.category||"Lainnya")}</small>
+          <small>Rp ${formatRupiah(p.price||0)}</small>
+          <small>Stok: ${p.stock||0}</small>
+          <small>Status: ${escapeHtml(status)}</small>
+          <small>${active ? "🟢 Tampil di toko" : "🔴 Disembunyikan dari toko"}</small>
+
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="primary" onclick="editProductById('${p.id}')">
+              ✏️ Edit
+            </button>
+
+            <button class="secondary" onclick="toggleActive('${p.id}')">
+              ${active ? "🔴 Nonaktifkan" : "🟢 Aktifkan"}
+            </button>
+
+            <button class="danger" onclick="deleteProduct('${p.id}')">
+              🗑️ Hapus
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  window.productCache=data;
+}
 }
 
 function editProductById(id){
