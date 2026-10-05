@@ -96,15 +96,7 @@ async function loadProducts() {
       if (!error && Array.isArray(data) && data.length) {
         const online = data.map(convertSupabaseProduct);
 
-        const onlineNames = new Set(
-          online.map(p => p.name.toLowerCase())
-        );
-
-        const oldProducts = fallbackProducts
-          .map(convertFallbackProduct)
-          .filter(p => !onlineNames.has(p.name.toLowerCase()));
-
-        products = [...online, ...oldProducts];
+        products = online;
       }
     }
   } catch (error) {
