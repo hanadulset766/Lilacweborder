@@ -245,6 +245,19 @@ function resetForm(){
  document.getElementById("activeProduct").value="true";
 }
 document.addEventListener("DOMContentLoaded",init);
+ document.addEventListener("DOMContentLoaded", function () {
+  const loginButton = document.getElementById("loginButton");
+
+  if (loginButton) {
+    loginButton.addEventListener("click", function () {
+      if (typeof loginAdmin === "function") {
+        loginAdmin();
+      } else {
+        showStatus("Fungsi loginAdmin tidak ditemukan.", true);
+      }
+    });
+  }
+});
 </script>
 </body>
 </html>
