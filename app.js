@@ -22,32 +22,182 @@ let lastOrder = null;
    GOOGLE SHEETS
 ===================================================== */
 function loadProducts() {
-  const oldScript = document.getElementById("lilac-sheet-script");
-  if (oldScript) oldScript.remove();
+  const csvUrl =
+    "https://docs.google.com/spreadsheets/d/" +
+    CONFIG.sheetId +
+    "/gviz/tq?tqx=out:csv&sheet=" +
+    encodeURIComponent(CONFIG.sheetName) +
+    "&_=" +
+    Date.now();
 
-  function handleSheetData(data) {
-    try {
-      console.log("Data Google Sheets:", data);
+  console.log("Memuat katalog:", csvUrl);
 
-      if (!data || !data.table) {
-        throw new Error("Data Google Sheets tidak ditemukan");
+  fetch(csvUrl, {
+    method: "GET",
+    cache: "no-store"
+  })
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error(
+          "Google Sheets HTTP " + response.status
+        );
       }
 
-      const rows = data.table.rows || [];
+      return response.text();
+    })
+    .then(function(csv) {
+      console.log("CSV Google Sheets berhasil dimuat");
 
-      products = rows.map(function(row, index) {
-        const cells = row.c || [];
+      const lines = csv
+        .split(/\r?\n/)
+        .filter(function(line) {
+          return line.trim() !== "";
+        });
 
-        function getValue(i) {
-          if (
-            cells[i] &&
-            cells[i].v !== undefined &&
-            cells[i].v !== null
+      if (lines.length < 2) {
+        throw new Error("Data produk kosong");
+      }
+
+      function parseCSVLine(line) {
+        const result = [];
+        let current = "";
+        let insideQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+
+          if (char === '"') {
+            if (
+              insideQuotes &&
+              line[i + 1] === '"'
+            ) {
+              current += '"';
+              i++;
+            } else {
+              insideQuotes = !insideQuotes;
+            }
+          } else if (
+            char === "," &&
+            !insideQuotes
           ) {
-            return String(cells[i].v).trim();
+            result.push(current.trim());
+            current = "";
+          } else {
+            current += char;
           }
-          return "";
         }
+
+        result.push(current.trim());
+
+        return result;
+      }
+
+      const headers = parseCSVLine(lines[0]).map(
+        function(header) {
+          return header
+            .replace(/^"|"$/g, "")
+            .trim();
+        }
+      );
+
+      console.log("Kolom:", headers);
+
+      products = lines
+        .slice(1)
+        .map(function(line, index) {
+          const cells = parseCSVLine(line);
+
+          function getValue(columnName) {
+            const columnIndex =
+              headers.indexOf(columnName);
+
+            if (
+              columnIndex === -1 ||
+              cells[columnIndex] === undefined
+            ) {
+              return "";
+            }
+
+            return cells[columnIndex]
+              .replace(/^"|"$/g, "")
+              .trim();
+          }
+
+          const id =
+            getValue("ID") ||
+            String(index + 1);
+
+          const name =
+            getValue("Nama Produk");
+
+          const cat =
+            getValue("Kategori") ||
+            "Lainnya";
+
+          const priceText =
+            getValue("Harga");
+
+          const icon =
+            getValue("Icon") ||
+            "🛍️";
+
+          const image =
+            getValue("URL Gambar");
+
+          const description =
+            getValue("Deskripsi");
+
+          const status =
+            getValue("Status") ||
+            "Ready";
+
+          const price =
+            Number(
+              priceText.replace(/[^\d]/g, "")
+            ) || 0;
+
+          return {
+            id: id,
+            name: name,
+            cat: cat,
+            price: price,
+            icon: icon,
+            image: image,
+            description: description,
+            status: status
+          };
+        })
+        .filter(function(product) {
+          return (
+            product.name &&
+            product.name.trim() !== ""
+          );
+        });
+
+      console.log(
+        "Jumlah produk dari Google Sheets:",
+        products.length
+      );
+
+      renderProducts();
+      updateReadyCount();
+    })
+    .catch(function(error) {
+      console.error(
+        "Gagal memuat Google Sheets:",
+        error
+      );
+
+      products = [];
+
+      renderProducts();
+      updateReadyCount();
+
+      showCatalogError(
+        "Katalog gagal dimuat. Silakan coba refresh halaman."
+      );
+    });
+}
 
         const id = getValue(0);
         const name = getValue(1);
