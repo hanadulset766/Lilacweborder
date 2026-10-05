@@ -97,13 +97,66 @@ function setLoggedIn(logged){
  if(logged) loadProducts();
 }
 async function loginAdmin(){
- const email=document.getElementById("email").value.trim();
- const password=document.getElementById("password").value;
- if(!email||!password){showStatus("Email dan password wajib diisi.",true);return;}
- const {error}=await db.auth.signInWithPassword({email,password});
- if(error){showStatus("Login gagal: "+error.message,true);return;}
- showStatus("Login admin berhasil.");
- setLoggedIn(true);
+  try{
+    const email=document.getElementById("email").value.trim();
+    const password=document.getElementById("password").value;
+
+    if(!email){
+      showStatus("Email admin wajib diisi.",true);
+      return;
+    }
+
+    if(!password){
+      showStatus("Password wajib diisi.",true);
+      return;
+    }
+
+    if(!window.supabase){
+      showStatus("Supabase belum berhasil dimuat.",true);
+      return;
+    }
+
+    if(!window.LILAC_SUPABASE_URL || !window.LILAC_SUPABASE_KEY){
+      showStatus("Konfigurasi Supabase tidak ditemukan.",true);
+      return;
+    }
+
+    if(!db){
+      db=window.supabase.createClient(
+        window.LILAC_SUPABASE_URL,
+        window.LILAC_SUPABASE_KEY
+      );
+    }
+
+    showStatus("Sedang login...");
+
+    const {data,error}=await db.auth.signInWithPassword({
+      email:email,
+      password:password
+    });
+
+    if(error){
+      console.error("LOGIN ERROR:",error);
+      showStatus("Login gagal: "+error.message,true);
+      return;
+    }
+
+    if(!data || !data.session){
+      showStatus("Login tidak mendapatkan sesi.",true);
+      return;
+    }
+
+    showStatus("Login admin berhasil.");
+    setLoggedIn(true);
+
+  }catch(error){
+    console.error("LOGIN ERROR:",error);
+    showStatus(
+      "Terjadi kesalahan: "+(error.message || String(error)),
+      true
+    );
+  }
+}
 }
 async function logoutAdmin(){
  await db.auth.signOut(); setLoggedIn(false); showStatus("Anda sudah logout.");
