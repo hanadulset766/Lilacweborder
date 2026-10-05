@@ -144,6 +144,7 @@ async function saveProduct(){
   stock:Number(document.getElementById("stock").value)||0,
   category:document.getElementById("category").value,
   status:document.getElementById("statusProduct").value,
+  active:document.getElementById("activeProduct").value === "true",
   icon:document.getElementById("icon").value.trim()||"🛍️",
   image_url:document.getElementById("image").value.trim(),
   description:document.getElementById("description").value.trim()
