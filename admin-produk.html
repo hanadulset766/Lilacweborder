@@ -157,6 +157,31 @@ async function saveProduct(){
  if(result.error){showStatus("Gagal menyimpan: "+result.error.message,true);return;}
  showStatus(id?"Produk berhasil diperbarui.":"Produk berhasil ditambahkan.");
  resetForm(); loadProducts();
+} async function toggleActive(id){
+  const product=(window.productCache||[])
+    .find(x=>String(x.id)===String(id));
+
+  if(!product)return;
+
+  const newValue=product.active === false;
+
+  const {error}=await db
+    .from("products")
+    .update({active:newValue})
+    .eq("id",id);
+
+  if(error){
+    showStatus("Gagal mengubah status: "+error.message,true);
+    return;
+  }
+
+  showStatus(
+    newValue
+      ? "Produk sekarang AKTIF dan tampil di toko."
+      : "Produk sekarang NONAKTIF dan disembunyikan dari toko."
+  );
+
+  loadProducts();
 }
 async function deleteProduct(id){
  if(!confirm("Hapus produk ini?"))return;
