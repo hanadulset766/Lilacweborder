@@ -21,140 +21,84 @@ let lastOrder = null;
 /* =====================================================
    GOOGLE SHEETS
 ===================================================== */
-
 function loadProducts() {
+  const oldScript = document.getElementById("lilac-sheet-script");
+  if (oldScript) oldScript.remove();
 
-  const oldScript = document.getElementById(
-    "lilac-sheet-script"
-  );
-
-  if (oldScript) {
-    oldScript.remove();
-  }
-
-  /*
-   * Callback khusus Google Sheets.
-   * Google akan memanggil:
-   * window.lilacSheetCallback(data)
-   */
-  window.lilacSheetCallback = function(data) {
-
+  function handleSheetData(data) {
     try {
-
-      console.log("Google Sheets response:", data);
+      console.log("Data Google Sheets:", data);
 
       if (!data || !data.table) {
-        throw new Error(
-          "Data Google Sheets tidak ditemukan."
-        );
+        throw new Error("Data Google Sheets tidak ditemukan");
       }
 
       const rows = data.table.rows || [];
 
-      products = rows
-        .map(function(row, index) {
+      products = rows.map(function(row, index) {
+        const cells = row.c || [];
 
-          const cells = row.c || [];
-
-          function value(position) {
-
-            if (
-              cells[position] &&
-              cells[position].v !== undefined &&
-              cells[position].v !== null
-            ) {
-              return String(cells[position].v).trim();
-            }
-
-            return "";
+        function getValue(i) {
+          if (
+            cells[i] &&
+            cells[i].v !== undefined &&
+            cells[i].v !== null
+          ) {
+            return String(cells[i].v).trim();
           }
+          return "";
+        }
 
-          const idValue = value(0);
+        const id = getValue(0);
+        const name = getValue(1);
+        const cat = getValue(2);
+        const priceText = getValue(3);
+        const icon = getValue(4) || "🛍️";
+        const image = getValue(5);
+        const description = getValue(6);
+        const status = getValue(7) || "Ready";
 
-          const name = value(1);
+        const price =
+          Number(priceText.replace(/[^\d]/g, "")) || 0;
 
-          const cat = value(2);
+        return {
+          id: id || String(index + 1),
+          name: name || "Produk",
+          cat: cat || "Lainnya",
+          price: price,
+          icon: icon,
+          image: image,
+          description: description,
+          status: status
+        };
+      }).filter(function(product) {
+        return product.name && product.name.trim() !== "";
+      });
 
-          const priceText = value(3);
-
-          const icon = value(4) || "🛍️";
-
-          const image = value(5);
-
-          const description = value(6);
-
-          const status = value(7) || "Ready";
-
-          /*
-           * Harga bisa berupa:
-           * 15000
-           * Rp15.000
-           * Rp 15.000
-           */
-          const price = Number(
-            priceText.replace(/[^\d]/g, "")
-          ) || 0;
-
-          /*
-           * ID dari Google Sheet.
-           * Jika kosong, gunakan nomor baris.
-           */
-          const id =
-            Number(idValue) ||
-            (index + 1);
-
-          return {
-            id: id,
-            name: name || "Produk",
-            cat: cat || "Lainnya",
-            price: price,
-            icon: icon,
-            image: image,
-            description: description,
-            status: status
-          };
-
-        })
-        .filter(function(product) {
-
-          return (
-            product.name &&
-            product.name.trim() !== ""
-          );
-
-        });
-
-      console.log(
-        "JUMLAH PRODUK:",
-        products.length
-      );
-
-      console.log(
-        "DATA PRODUK:",
-        products
-      );
+      console.log("Jumlah produk:", products.length);
 
       renderProducts();
-
       updateReadyCount();
 
     } catch (error) {
-
-      console.error(
-        "Gagal memproses Google Sheets:",
-        error
-      );
-
-      showCatalogError(
-        "Data Google Sheets tidak dapat diproses."
-      );
+      console.error("Gagal membaca Google Sheets:", error);
+      showCatalogError("Katalog gagal dibaca.");
     }
-  };
+  }
 
+  // Callback khusus
+  window.lilacSheetCallback = handleSheetData;
 
-  /*
-   * URL JSONP Google Sheets
-   */
+  // Callback bawaan Google Visualization
+  window.google = window.google || {};
+  window.google.visualization =
+    window.google.visualization || {};
+  window.google.visualization.Query =
+    window.google.visualization.Query || {};
+
+  window.google.visualization.Query.setResponse =
+    handleSheetData;
+
   const url =
     "https://docs.google.com/spreadsheets/d/" +
     CONFIG.sheetId +
@@ -162,67 +106,29 @@ function loadProducts() {
     "?sheet=" +
     encodeURIComponent(CONFIG.sheetName) +
     "&headers=1" +
-    "&tqx=" +
-    encodeURIComponent(
-      "out:json;responseHandler:lilacSheetCallback"
-    ) +
+    "&tqx=out:json" +
     "&_=" +
     Date.now();
 
+  const script = document.createElement("script");
 
-  console.log(
-    "Memuat katalog dari:",
-    url
-  );
-
-
-  const script =
-    document.createElement("script");
-
-  script.id =
-    "lilac-sheet-script";
-
+  script.id = "lilac-sheet-script";
   script.src = url;
-
   script.async = true;
 
-
   script.onerror = function() {
-
-    console.error(
-      "Google Sheets gagal diakses."
-    );
-
-    showCatalogError(
-      "Google Sheets tidak dapat diakses."
-    );
-
+    console.error("Google Sheets gagal dimuat.");
+    showCatalogError("Katalog Google Sheets gagal dimuat.");
   };
-
 
   document.head.appendChild(script);
 
-
-  /*
-   * Timeout untuk mendeteksi jika callback
-   * tidak pernah dipanggil.
-   */
   setTimeout(function() {
-
-    if (
-      products.length === 0 &&
-      document.getElementById("products")
-    ) {
-
-      console.warn(
-        "Katalog belum menerima data dari Google Sheets."
-      );
-
+    if (products.length === 0) {
+      console.warn("Produk masih kosong setelah memuat Google Sheets.");
     }
-
-  }, 8000);
+  }, 5000);
 }
-
 
 /* =====================================================
    ERROR KATALOG
