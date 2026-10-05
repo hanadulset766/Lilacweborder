@@ -131,6 +131,8 @@ function editProductById(id){
  document.getElementById("stock").value=p.stock||0;
  document.getElementById("category").value=p.category||"Lainnya";
  document.getElementById("statusProduct").value=p.status||"Ready";
+ document.getElementById("activeProduct").value =
+  p.active === false ? "false" : "true";
  document.getElementById("icon").value=p.icon||"🛍️";
  document.getElementById("image").value=p.image_url||"";
  document.getElementById("description").value=p.description||"";
