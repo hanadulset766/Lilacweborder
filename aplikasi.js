@@ -58,7 +58,8 @@ function convertSupabaseProduct(p) {
     icon: p.icon || "🛍️",
     image: p.image_url || "",
     description: p.description || "",
-    status: p.status || "Ready"
+    status: p.status || "Ready",
+    active: p.active !== false
   };
 }
 
