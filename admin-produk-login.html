@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Produk — Lilacmart Store</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#fff7fb;color:#321b2b}
+header{background:linear-gradient(135deg,#d93678,#f07aaa);color:#fff;padding:20px 16px;position:sticky;top:0;z-index:5}
+header h1{margin:0 0 6px;font-size:24px}header p{margin:0;opacity:.9}
+main{max-width:900px;margin:auto;padding:16px}.card{background:#fff;border-radius:18px;padding:16px;margin-bottom:16px;box-shadow:0 4px 18px #00000012}
+h2{margin:0 0 14px;font-size:20px}label{display:block;font-weight:700;margin:12px 0 6px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:11px;font-size:15px;background:#fff}
+textarea{min-height:90px;resize:vertical}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{border:0;border-radius:11px;padding:12px 16px;font-weight:700;font-size:15px;cursor:pointer}
+.primary{background:#d93678;color:#fff}.secondary{background:#f3e6ed;color:#63233f}.danger{background:#ffe0e8;color:#b4234d}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.status{padding:10px;border-radius:10px;background:#fff2f6;margin-bottom:12px;display:none}
+.product{display:flex;gap:12px;align-items:center;border:1px solid #eee;border-radius:14px;padding:12px;margin-top:10px}
+.product img,.emoji{width:58px;height:58px;border-radius:12px;object-fit:cover;background:#fff0f5;display:flex;align-items:center;justify-content:center;font-size:30px}
+.product-info{flex:1;min-width:0}.product-info strong{display:block;font-size:16px}.product-info small{display:block;margin-top:4px;color:#666}
+.badge{display:inline-block;padding:4px 8px;border-radius:20px;font-size:12px;font-weight:700;margin-top:5px}.ready{background:#dcfce7;color:#166534}.habis{background:#fee2e2;color:#991b1b}
+#app{display:none}.login-note{color:#666;font-size:14px;line-height:1.5}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.product{align-items:flex-start}}
+</style>
+</head>
+<body>
+<header><h1>🌸 Lilacmart Store</h1><p>Kelola produk toko</p></header>
+
+<main>
+<div id="status" class="status"></div>
+
+<section id="login" class="card">
+<h2>🔐 Login Admin</h2>
+<p class="login-note">Login menggunakan akun admin Supabase yang sudah Anda buat.</p>
+<label>Email Admin</label>
+<input id="email" type="email" autocomplete="username" placeholder="Email admin">
+<label>Password</label>
+<input id="password" type="password" autocomplete="current-password" placeholder="Password">
+<div class="actions"><button class="primary" onclick="loginAdmin()">🔐 Login</button></div>
+</section>
+
+<div id="app">
+<section class="card">
+<h2 id="formTitle">➕ Tambah Produk</h2>
+<input type="hidden" id="productId">
+<label>Nama Produk</label><input id="name" placeholder="Contoh: Spotify Premium">
+<div class="grid">
+<div><label>Harga (Rp)</label><input id="price" type="number" min="0" placeholder="15000"></div>
+<div><label>Stok</label><input id="stock" type="number" min="0" placeholder="10"></div>
+</div>
+<div class="grid">
+<div><label>Kategori</label><select id="category"><option>Langganan</option><option>Streaming</option><option>AI</option><option>Game</option><option>Lainnya</option></select></div>
+<div><label>Status</label><select id="statusProduct"><option value="Ready">Ready</option><option value="Habis">Habis</option></select></div>
+</div>
+<label>Icon / Emoji</label><input id="icon" placeholder="🎵">
+<label>URL Gambar</label><input id="image" placeholder="https://...">
+<label>Deskripsi</label><textarea id="description" placeholder="Deskripsi produk"></textarea>
+<div class="actions"><button class="primary" onclick="saveProduct()">💾 Simpan Produk</button><button class="secondary" onclick="resetForm()">↩️ Bersihkan</button></div>
+</section>
+
+<section class="card"><h2>📦 Daftar Produk</h2><div class="actions"><button class="secondary" onclick="loadProducts()">🔄 Refresh</button><button class="secondary" onclick="logoutAdmin()">🚪 Logout</button></div><div id="products">Memuat produk...</div></section>
+</div>
+</main>
+
+<script>
+let db=null;
+
+function showStatus(message,error=false){
+ const el=document.getElementById("status"); el.textContent=message; el.style.display="block";
+ el.style.background=error?"#ffe8ee":"#fff2f6";
+ setTimeout(()=>el.style.display="none",5000);
+}
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+function formatRupiah(n){return Number(n||0).toLocaleString("id-ID");}
+
+async function init(){
+ if(!window.supabase||!window.LILAC_SUPABASE_URL||!window.LILAC_SUPABASE_KEY){
+  showStatus("Konfigurasi Supabase tidak ditemukan.",true); return;
+ }
+ db=window.supabase.createClient(window.LILAC_SUPABASE_URL,window.LILAC_SUPABASE_KEY);
+ const {data:{session}}=await db.auth.getSession();
+ setLoggedIn(!!session);
+}
+function setLoggedIn(logged){
+ document.getElementById("login").style.display=logged?"none":"block";
+ document.getElementById("app").style.display=logged?"block":"none";
+ if(logged) loadProducts();
+}
+async function loginAdmin(){
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+ if(!email||!password){showStatus("Email dan password wajib diisi.",true);return;}
+ const {error}=await db.auth.signInWithPassword({email,password});
+ if(error){showStatus("Login gagal: "+error.message,true);return;}
+ showStatus("Login admin berhasil.");
+ setLoggedIn(true);
+}
+async function logoutAdmin(){
+ await db.auth.signOut(); setLoggedIn(false); showStatus("Anda sudah logout.");
+}
+
+async function loadProducts(){
+ const box=document.getElementById("products"); box.innerHTML="Memuat produk...";
+ const {data,error}=await db.from("products").select("*").order("created_at",{ascending:false});
+ if(error){box.innerHTML="<p>Gagal memuat produk: "+escapeHtml(error.message)+"</p>";return;}
+ if(!data||!data.length){box.innerHTML="<p>Belum ada produk. Tambahkan produk di atas.</p>";return;}
+ box.innerHTML=data.map(p=>{
+  const img=p.image_url||""; const visual=img?`<img src="${escapeHtml(img)}" onerror="this.outerHTML='<div class=emoji>${escapeHtml(p.icon||"🛍️")}</div>'">`:`<div class="emoji">${escapeHtml(p.icon||"🛍️")}</div>`;
+  const status=p.status||"Ready";
+  return `<div class="product">${visual}<div class="product-info"><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(p.category||"Lainnya")} • Rp ${formatRupiah(p.price)} • Stok: ${Number(p.stock||0)}</small><span class="badge ${status==="Ready"?"ready":"habis"}">${escapeHtml(status)}</span></div><div class="actions"><button class="secondary" onclick="editProductById('${p.id}')">✏️</button><button class="danger" onclick="deleteProduct('${p.id}')">🗑️</button></div></div>`;
+ }).join("");
+ window.productCache=data;
+}
+
+function editProductById(id){
+ const p=(window.productCache||[]).find(x=>String(x.id)===String(id)); if(!p)return;
+ document.getElementById("formTitle").textContent="✏️ Edit Produk";
+ document.getElementById("productId").value=p.id||"";
+ document.getElementById("name").value=p.name||"";
+ document.getElementById("price").value=p.price||0;
+ document.getElementById("stock").value=p.stock||0;
+ document.getElementById("category").value=p.category||"Lainnya";
+ document.getElementById("statusProduct").value=p.status||"Ready";
+ document.getElementById("icon").value=p.icon||"🛍️";
+ document.getElementById("image").value=p.image_url||"";
+ document.getElementById("description").value=p.description||"";
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+
+async function saveProduct(){
+ const payload={
+  name:document.getElementById("name").value.trim(),
+  price:Number(document.getElementById("price").value)||0,
+  stock:Number(document.getElementById("stock").value)||0,
+  category:document.getElementById("category").value,
+  status:document.getElementById("statusProduct").value,
+  icon:document.getElementById("icon").value.trim()||"🛍️",
+  image_url:document.getElementById("image").value.trim(),
+  description:document.getElementById("description").value.trim()
+ };
+ if(!payload.name){showStatus("Nama produk wajib diisi.",true);return;}
+ const id=document.getElementById("productId").value.trim();
+ const result=id?await db.from("products").update(payload).eq("id",id):await db.from("products").insert(payload);
+ if(result.error){showStatus("Gagal menyimpan: "+result.error.message,true);return;}
+ showStatus(id?"Produk berhasil diperbarui.":"Produk berhasil ditambahkan.");
+ resetForm(); loadProducts();
+}
+async function deleteProduct(id){
+ if(!confirm("Hapus produk ini?"))return;
+ const {error}=await db.from("products").delete().eq("id",id);
+ if(error){showStatus("Gagal menghapus: "+error.message,true);return;}
+ showStatus("Produk berhasil dihapus."); loadProducts();
+}
+function resetForm(){
+ document.getElementById("formTitle").textContent="➕ Tambah Produk";
+ ["productId","name","price","stock","icon","image","description"].forEach(id=>document.getElementById(id).value="");
+ document.getElementById("price").value=0; document.getElementById("stock").value=0;
+ document.getElementById("category").value="Langganan"; document.getElementById("statusProduct").value="Ready";
+}
+document.addEventListener("DOMContentLoaded",init);
+</script>
+</body>
+</html>
